@@ -1,98 +1,65 @@
 const Product = require('../models/productModel');
 const APIFeatures = require('../utils/apiFeatures');
+const catchAsync = require('../utils/catchAsync');
 
-exports.getAllProducts = async (req, res) => {
-  try {
-    // Build query
-    const features = new APIFeatures(Product.find(), req.query)
-      .filter()
-      .sort()
-      .limitFields()
-      .paginate();
+exports.getAllProducts = catchAsync(async (req, res, next) => {
+  // Build query
+  const features = new APIFeatures(Product.find(), req.query)
+    .filter()
+    .sort()
+    .limitFields()
+    .paginate();
 
-    // Execute query
-    const products = await features.query;
+  // Execute query
+  const products = await features.query;
 
-    res.status(200).json({
-      status: 'success',
-      results: products.length,
-      data: {
-        data: products,
-      },
-    });
-  } catch (error) {
-    res.status(400).json({
-      status: 'fail',
-      message: error.stack,
-    });
-  }
-};
+  // Send response
+  res.status(200).json({
+    status: 'success',
+    results: products.length,
+    data: {
+      data: products,
+    },
+  });
+});
 
-exports.createProduct = async (req, res) => {
-  try {
-    const newProduct = await Product.create(req.body);
-    res.status(201).json({
-      status: 'success',
-      data: {
-        data: newProduct,
-      },
-    });
-  } catch (error) {
-    res.status(400).json({
-      status: 'fail',
-      message: error,
-    });
-  }
-};
+exports.createProduct = catchAsync(async (req, res, next) => {
+  const newProduct = await Product.create(req.body);
+  res.status(201).json({
+    status: 'success',
+    data: {
+      data: newProduct,
+    },
+  });
+});
 
-exports.getProduct = async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    res.status(200).json({
-      status: 'success',
-      data: {
-        data: product,
-      },
-    });
-  } catch (error) {
-    res.status(400).json({
-      status: 'fail',
-      message: error,
-    });
-  }
-};
+exports.getProduct = catchAsync(async (req, res, next) => {
+  const product = await Product.findById(req.params.id);
+  res.status(200).json({
+    status: 'success',
+    data: {
+      data: product,
+    },
+  });
+});
 
-exports.updateProduct = async (req, res) => {
-  try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-    res.status(200).json({
-      status: 'success',
-      data: {
-        data: product,
-      },
-    });
-  } catch (error) {
-    res.status(400).json({
-      status: 'fail',
-      message: error,
-    });
-  }
-};
+exports.updateProduct = catchAsync(async (req, res, next) => {
+  const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  });
+  res.status(200).json({
+    status: 'success',
+    data: {
+      data: product,
+    },
+  });
+});
 
-exports.deleteProduct = async (req, res) => {
-  try {
-    const product = await Product.findByIdAndDelete(req.params.id);
-    res.status(204).json({
-      status: 'success',
-      data: null,
-    });
-  } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err,
-    });
-  }
-};
+exports.deleteProduct = catchAsync(async (req, res, next) => {
+  const product = await Product.findByIdAndDelete(req.params.id);
+  res.status(204).json({
+    status: 'success',
+    data: null,
+  });
+});

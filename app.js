@@ -4,15 +4,28 @@ const app = express();
 const dotenv = require('dotenv');
 const productRouter = require('./routes/productRoutes');
 
+//Error handling
+const AppError = require('./utils/appError');
+const globalErrorHandler = require('./controllers/errorController');
+
 dotenv.config({ path: './config.env' });
 
 //All the middleware put here
 app.use(express.json());
 
 //HTTP request logger
-app.use(morgan('dev'));
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
 
 //Routes
 app.use('/api/v1/products', productRouter.router);
+
+//Route Error handling
+app.all('*', (req, res, next) => {
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
+
+app.use(globalErrorHandler);
 
 module.exports = app;
