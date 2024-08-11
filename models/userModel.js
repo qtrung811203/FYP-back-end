@@ -37,6 +37,11 @@ const userSchema = new mongoose.Schema(
       // required: [true, 'Please provide a phone number'],
     },
     passwordChangedAt: Date,
+    role: {
+      type: String,
+      enum: ['user', 'admin', 'manager'],
+      default: 'user',
+    },
   },
   {
     timestamps: true,

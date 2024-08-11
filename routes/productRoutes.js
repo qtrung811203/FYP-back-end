@@ -6,14 +6,26 @@ const authController = require('../controllers/authController');
 //api/v1/products
 router
   .route('/')
-  .get(authController.protect, productController.getAllProducts)
-  .post(productController.createProduct);
+  .get(productController.getAllProducts)
+  .post(
+    authController.protect,
+    authController.inRole('manager', 'admin'),
+    productController.createProduct,
+  );
 
 //api/v1/products/:id
 router
   .route('/:id')
   .get(productController.getProduct)
-  .patch(productController.updateProduct)
-  .delete(productController.deleteProduct);
+  .patch(
+    authController.protect,
+    authController.inRole('manager', 'admin'),
+    productController.updateProduct,
+  )
+  .delete(
+    authController.protect,
+    authController.inRole('manager', 'admin'),
+    productController.deleteProduct,
+  );
 
 exports.router = router;
