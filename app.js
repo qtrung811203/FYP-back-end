@@ -3,6 +3,7 @@ const morgan = require('morgan');
 const app = express();
 const dotenv = require('dotenv');
 const productRouter = require('./routes/productRoutes');
+const userRouter = require('./routes/userRoutes');
 
 //Error handling
 const AppError = require('./utils/appError');
@@ -20,6 +21,7 @@ if (process.env.NODE_ENV === 'development') {
 
 //Routes
 app.use('/api/v1/products', productRouter.router);
+app.use('/api/v1/users', userRouter.router);
 
 //Route Error handling
 app.all('*', (req, res, next) => {
