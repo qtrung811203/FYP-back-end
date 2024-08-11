@@ -19,6 +19,11 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+//testing req, res
+app.use((req, res, next) => {
+  next();
+});
+
 //Routes
 app.use('/api/v1/products', productRouter.router);
 app.use('/api/v1/users', userRouter.router);
