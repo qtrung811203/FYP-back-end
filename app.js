@@ -2,6 +2,11 @@ const express = require('express');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const mongoSanatize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const hpp = require('hpp');
+const cors = require('cors');
 
 const productRouter = require('./routes/productRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -15,19 +20,40 @@ const globalErrorHandler = require('./controllers/errorController');
 dotenv.config({ path: './config.env' });
 
 //MIDDLEWARES
+//Enable CORS
+const corsOptions = {
+  // origin: "https://example.com",
+  methods: 'GET, POST, PUT, DELETE',
+  allowedHeaders: 'Content-Type, Authorization',
+};
+app.use(cors(corsOptions));
+
+//Set security HTTP headers
+app.use(helmet());
+
+//Body parser (reading data from body into req.body)
 app.use(express.json());
 
-//HTTP request logger
+//Data sanitization against XSS
+app.use(xss());
+
+//Prevent parameter pollution
+app.use(hpp());
+
+//Data sanitization against NoSQL query injection
+app.use(mongoSanatize());
+
+//Development log
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+//Rate limiter
 const limiter = rateLimit({
   max: 100,
   windowMs: 60 * 60 * 1000,
   message: 'Too many requests from this IP, please try again in an hour!',
 });
-
 app.use('/api', limiter);
 
 //Routes
