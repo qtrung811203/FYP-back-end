@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const mongoSanatize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
+const cors = require('cors');
 
 const productRouter = require('./routes/productRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -19,6 +20,14 @@ const globalErrorHandler = require('./controllers/errorController');
 dotenv.config({ path: './config.env' });
 
 //MIDDLEWARES
+//Enable CORS
+const corsOptions = {
+  // origin: "https://example.com",
+  methods: 'GET, POST, PUT, DELETE',
+  allowedHeaders: 'Content-Type, Authorization',
+};
+app.use(cors(corsOptions));
+
 //Set security HTTP headers
 app.use(helmet());
 
