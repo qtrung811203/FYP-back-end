@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const mongoSanatize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
+const hpp = require('hpp');
 
 const productRouter = require('./routes/productRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -21,14 +22,17 @@ dotenv.config({ path: './config.env' });
 //Set security HTTP headers
 app.use(helmet());
 
-//Data sanitization against NoSQL query injection
-app.use(mongoSanatize());
+//Body parser (reading data from body into req.body)
+app.use(express.json());
 
 //Data sanitization against XSS
 app.use(xss());
 
-//Body parser (reading data from body into req.body)
-app.use(express.json());
+//Prevent parameter pollution
+app.use(hpp());
+
+//Data sanitization against NoSQL query injection
+app.use(mongoSanatize());
 
 //Development log
 if (process.env.NODE_ENV === 'development') {
