@@ -2,6 +2,7 @@ const express = require('express');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 
 const productRouter = require('./routes/productRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -15,19 +16,23 @@ const globalErrorHandler = require('./controllers/errorController');
 dotenv.config({ path: './config.env' });
 
 //MIDDLEWARES
+//Set security HTTP headers
+app.use(helmet());
+
+//Body parser (reading data from body into req.body)
 app.use(express.json());
 
-//HTTP request logger
+//Development log
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+//Rate limiter
 const limiter = rateLimit({
   max: 100,
   windowMs: 60 * 60 * 1000,
   message: 'Too many requests from this IP, please try again in an hour!',
 });
-
 app.use('/api', limiter);
 
 //Routes
