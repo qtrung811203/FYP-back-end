@@ -12,7 +12,7 @@ const signTokenAndSend = (user, statusCode, res) => {
     status: 'success',
     token,
     data: {
-      user,
+      user: user.name,
     },
   });
 };
@@ -160,7 +160,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   signTokenAndSend(user, 200, res);
 });
 
-exports.updatePassword = catchAsync(async (req, res, next) => {
+exports.updateMyPassword = catchAsync(async (req, res, next) => {
   //1 - get user from collection
   const user = await User.findById(req.user.id).select('+password');
   //2 - check if posted current password is correct
