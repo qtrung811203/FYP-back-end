@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/productController');
 const authController = require('../controllers/authController');
+const reviewRouter = require('./reviewRoutes');
+
+//api/v1/products/:productId/reviews
+router.use('/:productId/reviews', reviewRouter);
 
 //api/v1/products
 router
