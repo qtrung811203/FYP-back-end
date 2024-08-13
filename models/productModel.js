@@ -45,6 +45,8 @@ const productSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   },
 );
 
@@ -52,6 +54,12 @@ const productSchema = new mongoose.Schema(
 //   this.slug = slugify(this.name, { lower: true });
 //   next();
 // });
+
+productSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'product',
+  localField: '_id',
+});
 
 Product = mongoose.model('Product', productSchema);
 module.exports = Product;

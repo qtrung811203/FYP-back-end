@@ -26,4 +26,4 @@ router
   .patch(userController.updateUser)
   .delete(userController.deleteUser);
 
-exports.router = router;
+module.exports = router;

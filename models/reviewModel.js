@@ -5,7 +5,7 @@ const reviewSchema = new mongoose.Schema(
     review: {
       type: String,
       required: [true, 'Review is required'],
-      minLength: [10, 'Review must be at least 10 characters long'],
+      minLength: [5, 'Review must be at least 5 characters long'],
       maxLength: [500, 'Review must not exceed 500 characters'],
     },
     rating: {
@@ -31,6 +31,14 @@ const reviewSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   },
 );
+
+reviewSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: 'user',
+    select: 'name photo',
+  });
+  next();
+});
 
 const Review = mongoose.model('Review', reviewSchema);
 module.exports = Review;

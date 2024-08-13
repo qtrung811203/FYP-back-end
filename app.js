@@ -10,6 +10,7 @@ const cors = require('cors');
 
 const productRouter = require('./routes/productRoutes');
 const userRouter = require('./routes/userRoutes');
+const reviewRouter = require('./routes/reviewRoutes');
 
 const app = express();
 
@@ -57,8 +58,9 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 //Routes
-app.use('/api/v1/products', productRouter.router);
-app.use('/api/v1/users', userRouter.router);
+app.use('/api/v1/products', productRouter);
+app.use('/api/v1/users', userRouter);
+app.use('/api/v1/reviews', reviewRouter);
 
 //Route Error handling
 app.all('*', (req, res, next) => {

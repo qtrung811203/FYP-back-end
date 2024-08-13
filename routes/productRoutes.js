@@ -28,4 +28,4 @@ router
     productController.deleteProduct,
   );
 
-exports.router = router;
+module.exports = router;
