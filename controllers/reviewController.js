@@ -2,7 +2,7 @@ const Review = require('../models/reviewModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
-exports.getAllReviews = catchAsync(async (req, res) => {
+exports.getAllReviews = catchAsync(async (req, res, next) => {
   const filter = {};
   if (req.params.productId) filter.product = req.params.productId;
   const reviews = await Review.find(filter);
@@ -15,7 +15,7 @@ exports.getAllReviews = catchAsync(async (req, res) => {
   });
 });
 
-exports.createReview = catchAsync(async (req, res) => {
+exports.createReview = catchAsync(async (req, res, next) => {
   if (!req.body.product) req.body.product = req.params.productId;
   if (!req.body.user) req.body.user = req.user.id;
   const newReview = await Review.create(req.body);
@@ -27,7 +27,7 @@ exports.createReview = catchAsync(async (req, res) => {
   });
 });
 
-exports.getReview = catchAsync(async (req, res) => {
+exports.getReview = catchAsync(async (req, res, next) => {
   const review = await Review.findById(req.params.id);
   if (!review) {
     return next(new AppError('No review found with that ID', 404));
@@ -40,7 +40,7 @@ exports.getReview = catchAsync(async (req, res) => {
   });
 });
 
-exports.updateReview = catchAsync(async (req, res) => {
+exports.updateReview = catchAsync(async (req, res, next) => {
   const review = await Review.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
     runValidators: true,
@@ -56,7 +56,7 @@ exports.updateReview = catchAsync(async (req, res) => {
   });
 });
 
-exports.deleteReview = catchAsync(async (req, res) => {
+exports.deleteReview = catchAsync(async (req, res, next) => {
   const review = await Review.findByIdAndDelete(req.params.id);
   if (!review || review.user.id !== req.user.id) {
     return next(new AppError('No review found with that ID', 404));
