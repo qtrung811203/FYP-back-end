@@ -27,13 +27,13 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Product stock is required'],
     },
-    ratingAverage: {
+    ratingsAverage: {
       type: Number,
       min: [1, 'Rating must be at least 1'],
       max: [5, 'Rating must be less than 5'],
       default: 4.5,
     },
-    ratingQuantity: {
+    ratingsQuantity: {
       type: Number,
       default: 0,
     },

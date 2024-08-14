@@ -15,15 +15,14 @@ router.use(authController.protect);
 router.route('/updateMyPassword').patch(authController.updateMyPassword);
 router.route('/updateMe').patch(userController.updateMe);
 router.route('/deleteMe').delete(userController.deleteMe);
+router.route('/me').get(userController.getMe, userController.getUser);
 
 // Only admin and manager can access the routes below
 router.use(authController.inRole('admin', 'manager'));
-
 router.route('/').get(userController.getAllUsers);
 router
   .route('/:id')
   .get(userController.getUser)
   .patch(userController.updateUser)
   .delete(userController.deleteUser);
-
 module.exports = router;

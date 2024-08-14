@@ -40,5 +40,37 @@ reviewSchema.pre(/^find/, function (next) {
   next();
 });
 
+reviewSchema.statics.calcAverageRatings = async function (productId) {
+  const stats = await this.aggregate([
+    {
+      $match: { product: productId },
+    },
+    {
+      $group: {
+        _id: '$product',
+        nRating: { $sum: 1 },
+        avgRating: { $avg: '$rating' },
+      },
+    },
+  ]);
+
+  if (stats.length > 0) {
+    await mongoose.model('Product').findByIdAndUpdate(productId, {
+      ratingsQuantity: stats[0].nRating,
+      ratingsAverage: stats[0].avgRating,
+    });
+  }
+};
+
+reviewSchema.post('save', function () {
+  console.log(this);
+  this.constructor.calcAverageRatings(this.product);
+});
+
+//update and delete review
+reviewSchema.post(/^findOneAnd/, async function (docs) {
+  await docs.constructor.calcAverageRatings(docs.product);
+});
+
 const Review = mongoose.model('Review', reviewSchema);
 module.exports = Review;
