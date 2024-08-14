@@ -7,12 +7,22 @@ const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Please provide a name'],
       maxLength: [100, 'Name must not exceed 100 characters'],
       minLength: [5, 'Name must be at least 5 characters long'],
+      default: function () {
+        return this.email.split('@')[0]; //maybe change it to random string
+      },
     },
     phoneNumber: {
       type: String,
+      validate: {
+        validator: function (val) {
+          if (val) {
+            return validator.isMobilePhone(val, 'vi-VN');
+          }
+        },
+        message: 'Invalid Phone Number',
+      },
     },
     email: {
       type: String,

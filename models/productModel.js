@@ -5,18 +5,18 @@ const productSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Product name is required'],
       trim: true,
       unique: true,
-      maxLength: [100, 'Product name must not exceed 100 characters'],
+      required: [true, 'Product name is required'],
       minLength: [5, 'Product name must be at least 5 characters long'],
+      maxLength: [100, 'Product name must not exceed 100 characters'],
     },
     description: {
       type: String,
-      required: [true, 'Product description is required'],
       trim: true,
-      maxLength: [500, 'Product description must not exceed 500 characters'],
+      required: [true, 'Product description is required'],
       minLength: [5, 'Product description must be at least 20 characters'],
+      maxLength: [500, 'Product description must not exceed 500 characters'],
     },
     price: {
       type: Number,
@@ -27,15 +27,15 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Product stock is required'],
     },
-    ratingAverage: {
+    ratingsAverage: {
       type: Number,
+      min: [1, 'Rating must be at least 1'],
+      max: [5, 'Rating must be less than 5'],
       default: 4.5,
     },
-    ratingQuantity: {
+    ratingsQuantity: {
       type: Number,
       default: 0,
-      min: [0, 'Rating quantity must be greater than 0'],
-      max: [5, 'Rating quantity must be less than 5'],
     },
     imageCover: {
       type: String,
@@ -45,6 +45,8 @@ const productSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   },
 );
 
@@ -52,6 +54,12 @@ const productSchema = new mongoose.Schema(
 //   this.slug = slugify(this.name, { lower: true });
 //   next();
 // });
+
+productSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'product',
+  localField: '_id',
+});
 
 Product = mongoose.model('Product', productSchema);
 module.exports = Product;
