@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema(
         message: 'Invalid Phone Number',
       },
     },
+    image: {
+      type: String,
+      default: 'default.jpg',
+    },
     email: {
       type: String,
       required: [true, 'Please provide an email'],

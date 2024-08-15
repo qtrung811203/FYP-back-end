@@ -2,6 +2,18 @@ const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
+const cloudinary = require('../services/cloudinaryConfig');
+const uploadImageUser = require('../services/multerConfig');
+
+//MIDDLEWARE
+// User Upload
+exports.uploadImageUser = uploadImageUser.single('image');
+exports.uploadCloudinary = catchAsync(async (req, res, next) => {
+  const results = await cloudinary.uploader.upload(req.file.path);
+  console.log('result', results);
+  next();
+});
+
 // HELPER FUNCTIONS
 const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
@@ -85,6 +97,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   }
   // 2 - update user document
   const filteredBody = filterObj(req.body, 'name', 'email');
+  req.file ? (filteredBody.image = req.file.path) : null;
   const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
     new: true,
     runValidators: true,

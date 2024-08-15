@@ -13,7 +13,9 @@ router.route('/resetPassword/:token').patch(authController.resetPassword);
 // Only logged in user can access the routes below
 router.use(authController.protect);
 router.route('/updateMyPassword').patch(authController.updateMyPassword);
-router.route('/updateMe').patch(userController.updateMe);
+router
+  .route('/updateMe')
+  .patch(userController.uploadImageUser, userController.updateMe);
 router.route('/deleteMe').delete(userController.deleteMe);
 router.route('/me').get(userController.getMe, userController.getUser);
 
