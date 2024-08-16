@@ -26,7 +26,12 @@ const userSchema = new mongoose.Schema(
     },
     image: {
       type: String,
-      default: 'default.jpg',
+      default:
+        'https://res.cloudinary.com/dje0spcns/image/upload/v1723778834/users/user_default.png',
+    },
+    address: {
+      type: String,
+      maxLength: [200, 'Address must not exceed 200 characters'],
     },
     email: {
       type: String,

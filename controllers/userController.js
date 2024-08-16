@@ -3,16 +3,11 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
 const cloudinary = require('../services/cloudinaryConfig');
-const uploadImageUser = require('../services/multerConfig');
+const { uploadImageUser } = require('../services/multerConfig');
 
 //MIDDLEWARE
 // User Upload
 exports.uploadImageUser = uploadImageUser.single('image');
-exports.uploadCloudinary = catchAsync(async (req, res, next) => {
-  const results = await cloudinary.uploader.upload(req.file.path);
-  console.log('result', results);
-  next();
-});
 
 // HELPER FUNCTIONS
 const filterObj = (obj, ...allowedFields) => {
@@ -29,6 +24,12 @@ const excludedField = (obj, ...excludedFields) => {
     if (!excludedFields.includes(el)) newObj[el] = obj[el];
   });
   return newObj;
+};
+
+const getPublicIdCloudinary = (cloudUrl) => {
+  const [, , , , , , , folder, fileNameWithExt] = cloudUrl.split('/');
+  const fileName = fileNameWithExt.split('.')[0];
+  return `${folder}/${fileName}`;
 };
 
 // FOR ADMIN & MANAGER//
@@ -78,6 +79,11 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
   if (!user) {
     return next(new AppError('No user found with that ID', 404));
   }
+  //remove image from cloudinary
+  const result = getPublicIdCloudinary(user.image);
+  if (result !== 'users/user_default')
+    await cloudinary.uploader.destroy(result);
+
   res.status(204).json({
     status: 'success',
     data: null,
@@ -96,12 +102,28 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     );
   }
   // 2 - update user document
-  const filteredBody = filterObj(req.body, 'name', 'email');
-  req.file ? (filteredBody.image = req.file.path) : null;
+  const filteredBody = filterObj(
+    req.body,
+    'name',
+    'email',
+    'phoneNumber',
+    'address',
+  );
+
+  // 3 - update image
+  if (req.file) {
+    filteredBody.image = req.file.path;
+    //remove old image from cloudinary
+    const result = getPublicIdCloudinary(req.user.image);
+    if (result !== 'users/user_default')
+      await cloudinary.uploader.destroy(result);
+  }
+
   const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
     new: true,
     runValidators: true,
   });
+
   res.status(200).json({
     status: 'success',
     data: {
