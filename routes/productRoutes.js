@@ -14,6 +14,7 @@ router
   .post(
     authController.protect,
     authController.inRole('manager', 'admin'),
+    productController.uploadImagesProduct,
     productController.createProduct,
   );
 
@@ -24,6 +25,7 @@ router
   .patch(
     authController.protect,
     authController.inRole('manager', 'admin'),
+    productController.uploadImagesProduct,
     productController.updateProduct,
   )
   .delete(

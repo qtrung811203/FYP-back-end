@@ -19,7 +19,6 @@ const userStorage = new CloudinaryStorage({
 const productStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    console.log(req);
     return {
       folder: 'products',
       allowedFormats: ['jpg', 'png'],
@@ -30,5 +29,5 @@ const productStorage = new CloudinaryStorage({
 });
 
 const uploadImageUser = multer({ storage: userStorage });
-const uploadImageProduct = multer({ storage: productStorage });
-module.exports = { uploadImageUser, uploadImageProduct };
+const uploadImagesProduct = multer({ storage: productStorage });
+module.exports = { uploadImageUser, uploadImagesProduct };

@@ -39,8 +39,6 @@ const productSchema = new mongoose.Schema(
     },
     imageCover: {
       type: String,
-      default: 'default.jpg',
-      //   required: [true, 'Product cover image is required'],
     },
     images: [String],
   },
