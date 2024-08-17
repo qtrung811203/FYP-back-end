@@ -2,6 +2,7 @@ const Cart = require('../models/cartModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
+//user
 exports.getMyCart = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
   let cart = await Cart.findOne({ userId });
@@ -16,7 +17,7 @@ exports.getMyCart = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.addToCart = catchAsync(async (req, res, next) => {
+exports.putItemToCart = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
   const { productId, quantity } = req.body;
   let cart = await Cart.findOne({ userId });
@@ -50,7 +51,6 @@ exports.addToCart = catchAsync(async (req, res, next) => {
 exports.updateCart = catchAsync(async (req, res, next) => {
   //update note
   const userId = req.user.id;
-  console.log(userId);
   const { note } = req.body;
   const cart = await Cart.findOneAndUpdate(
     { userId },
@@ -72,11 +72,10 @@ exports.updateCart = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.removeFromCart = catchAsync(async (req, res, next) => {
+exports.deleteOneItemFromCart = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
   const { productId } = req.params;
   const cart = await Cart.findOne({ userId });
-  console.log(cart);
   if (!cart) {
     return next(new AppError('No cart found with that ID', 404));
   }
@@ -93,7 +92,7 @@ exports.removeFromCart = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.deleteCart = catchAsync(async (req, res, next) => {
+exports.deleteAllItemsFromCart = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
   const cart = await Cart.findOne({ userId });
   if (!cart) {
@@ -107,5 +106,43 @@ exports.deleteCart = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     data: cart,
+  });
+});
+
+//admin & manager
+exports.getOneCart = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const cart = await Cart.findById(id);
+  if (!cart) {
+    return next(new AppError('No cart found with that ID', 404));
+  }
+  res.status(200).json({
+    status: 'success',
+    data: {
+      data: cart,
+    },
+  });
+});
+
+exports.getAllCarts = catchAsync(async (req, res, next) => {
+  const carts = await Cart.find();
+  res.status(200).json({
+    status: 'success',
+    results: carts.length,
+    data: {
+      data: carts,
+    },
+  });
+});
+
+exports.deleteCart = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const cart = await Cart.findByIdAndDelete(id);
+  if (!cart) {
+    return next(new AppError('No cart found with that ID', 404));
+  }
+  res.status(204).json({
+    status: 'success',
+    data: null,
   });
 });
