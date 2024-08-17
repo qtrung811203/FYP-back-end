@@ -13,6 +13,7 @@ const cors = require('cors');
 const productRouter = require('./routes/productRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
+const cartRouter = require('./routes/cartRoutes');
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use('/api', limiter);
 app.use('/api/v1/products', productRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
+app.use('/api/v1/cart', cartRouter);
 
 //Route Error handling
 app.all('*', (req, res, next) => {
