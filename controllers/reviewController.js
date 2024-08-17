@@ -1,7 +1,6 @@
 const Review = require('../models/reviewModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
-const factory = require('./handlerFactory');
 
 // Middleware to check if the user is the owner of the review
 exports.checkUserReview = catchAsync(async (req, res, next) => {

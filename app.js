@@ -1,6 +1,8 @@
+const dotenv = require('dotenv');
+dotenv.config({ path: './config.env' });
+
 const express = require('express');
 const morgan = require('morgan');
-const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const mongoSanatize = require('express-mongo-sanitize');
@@ -18,9 +20,11 @@ const app = express();
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 
-dotenv.config({ path: './config.env' });
-
 //MIDDLEWARES
+//Body parser (reading data from body into req.body)
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+
 //Enable CORS
 const corsOptions = {
   // origin: "https://example.com",
@@ -31,9 +35,6 @@ app.use(cors(corsOptions));
 
 //Set security HTTP headers
 app.use(helmet());
-
-//Body parser (reading data from body into req.body)
-app.use(express.json());
 
 //Data sanitization against XSS
 app.use(xss());
