@@ -109,22 +109,49 @@ productSchema.pre('save', function (next) {
   next();
 });
 
+//check time pre save and update
 productSchema.pre('save', function (next) {
-  if (this.closeTime && this.openTime && this.closeTime <= this.openTime) {
-    return next(new Error('Close time must be after open time'));
+  if (this.openTime && this.closeTime) {
+    if (this.closeTime <= this.openTime) {
+      return next(new Error('Close time must be after open time'));
+    }
   }
   next();
 });
 
-productSchema.pre('findOneAndUpdate', function (next) {
+productSchema.pre('findOneAndUpdate', async function (next) {
   const update = this.getUpdate();
-  if (
-    update.closeTime &&
-    update.openTime &&
-    update.closeTime <= update.openTime
-  ) {
-    return next(new Error('Close time must be after open time'));
+  let newOpenTime = update.openTime;
+  let newCloseTime = update.closeTime;
+
+  if (newOpenTime && newCloseTime) {
+    newOpenTime = new Date(update.openTime);
+    newCloseTime = new Date(update.closeTime);
+    if (newCloseTime <= newOpenTime) {
+      return next(new Error('Close time must be after open time'));
+    }
+  } else if (newCloseTime) {
+    newCloseTime = new Date(update.closeTime);
+    const docToUpdate = await this.model.findOne(this.getQuery());
+    if (!docToUpdate) {
+      return next(new Error('Document not found'));
+    }
+
+    if (docToUpdate.openTime && newCloseTime <= docToUpdate.openTime) {
+      return next(new Error('Close time must be after open time'));
+    }
+  } else if (newOpenTime) {
+    newOpenTime = new Date(update.openTime);
+    const docToUpdate = await this.model.findOne(this.getQuery());
+    if (!docToUpdate) {
+      return next(new Error('Document not found'));
+    }
+    console.log(newOpenTime.Date >= docToUpdate.closeTime);
+    if (docToUpdate.closeTime && newOpenTime >= docToUpdate.closeTime) {
+      return next(new Error('Open time must be before close time'));
+    }
   }
+
   next();
 });
 
