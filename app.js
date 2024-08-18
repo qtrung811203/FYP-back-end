@@ -23,8 +23,8 @@ const globalErrorHandler = require('./controllers/errorController');
 
 //MIDDLEWARES
 //Body parser (reading data from body into req.body)
-app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 //Enable CORS
 const corsOptions = {

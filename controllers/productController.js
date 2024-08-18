@@ -7,10 +7,15 @@ const cloudinary = require('../services/cloudinaryConfig');
 const { uploadImagesProduct } = require('../services/multerConfig');
 
 // MIDDLEWARE
-exports.uploadImagesProduct = uploadImagesProduct.fields([
-  { name: 'imageCover', maxCount: 1 },
-  { name: 'images' },
-]);
+exports.uploadProductImageCover = uploadImagesProduct.single('imageCover');
+
+exports.updateProductImageCover = async (req, res, next) => {
+  const product = await Product.findOne({ slug: req.params.slug });
+  if (!product) {
+    return next(new AppError('No document found with that slug', 404));
+  }
+  return uploadImagesProduct.single('imageCover');
+};
 
 // HELPER FUNCTIONS
 const getPublicIdCloudinary = (cloudUrl) => {
@@ -22,12 +27,12 @@ const getPublicIdCloudinary = (cloudUrl) => {
 const deleteImgCloudinary = async (imgCoverUrl, imgs) => {
   const imgCoverId = getPublicIdCloudinary(imgCoverUrl);
   await cloudinary.uploader.destroy(imgCoverId);
-  if (imgs.length > 0) {
-    const imgsId = imgs.map((img) => getPublicIdCloudinary(img));
-    imgsId.forEach(async (imgId) => {
-      await cloudinary.uploader.destroy(imgId);
-    });
-  }
+  // if (imgs.length > 0) {
+  //   const imgsId = imgs.map((img) => getPublicIdCloudinary(img));
+  //   imgsId.forEach(async (imgId) => {
+  //     await cloudinary.uploader.destroy(imgId);
+  //   });
+  // }
 };
 
 //ROUTES HANDLERS
@@ -52,11 +57,10 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
 });
 
 exports.createProduct = catchAsync(async (req, res, next) => {
-  if (!req.files.imageCover || !req.files.images) {
+  if (!req.files.imageCover) {
     return next(new AppError('Please upload imageCover and images', 400));
   }
   req.body.imageCover = req.files.imageCover[0].path;
-  req.body.images = req.files.images.map((file) => file.path);
   const product = await Product.create(req.body);
   res.status(201).json({
     status: 'success',
@@ -67,7 +71,9 @@ exports.createProduct = catchAsync(async (req, res, next) => {
 });
 
 exports.getProduct = catchAsync(async (req, res, next) => {
-  const product = await Product.findById(req.params.id).populate('reviews');
+  const product = await Product.findOne({ slug: req.params.slug }).populate(
+    'reviews',
+  );
   if (!product) {
     return next(new AppError('No document found with that ID', 404));
   }
@@ -82,18 +88,22 @@ exports.getProduct = catchAsync(async (req, res, next) => {
 
 exports.updateProduct = catchAsync(async (req, res, next) => {
   // 1 - Check if imageCover and images are not empty
-  if (req.files.imageCover && req.files.images) {
+  // console.log(req.files);
+  if (req.files.imageCover) {
     // 2 - delete old imageCover and images
-    const product = await Product.findById(req.params.id);
-    deleteImgCloudinary(product.imageCover, product.images);
+    const product = await Product.findOne({ slug: req.params.slug });
+    deleteImgCloudinary(product.imageCover);
     req.body.imageCover = req.files.imageCover[0].path;
-    req.body.images = req.files.images.map((file) => file.path);
   }
 
-  const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
+  const product = await Product.findOneAndUpdate(
+    { slug: req.params.slug },
+    req.body,
+    {
+      new: true,
+      runValidators: true,
+    },
+  );
   if (!product) {
     return next(new AppError('No document found with that ID', 404));
   }
@@ -117,3 +127,5 @@ exports.deleteProduct = catchAsync(async (req, res, next) => {
     data: null,
   });
 });
+
+exports.addItemToProduct = catchAsync(async (req, res, next) => {});

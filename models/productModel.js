@@ -1,5 +1,39 @@
 const mongoose = require('mongoose');
-// const slugify = require('slugify');
+const slugify = require('slugify');
+
+const itemSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'Item name is required'],
+    trim: true,
+  },
+  category: {
+    type: String,
+    required: [true, 'Item category is required'],
+  },
+  itemImages: {
+    type: String,
+    required: [true, 'Item image is required'],
+  },
+  price: {
+    type: Number,
+    required: [true, 'Item price is required'],
+  },
+  maxBuy: {
+    type: Number,
+  },
+  stock: {
+    type: Number,
+    required: [true, 'Item stock is required'],
+  },
+  status: {
+    type: String,
+    enum: ['inStock', 'outOfStock'],
+    default: function () {
+      return this.stock > 0 ? 'inStock' : 'outOfStock';
+    },
+  },
+});
 
 const productSchema = new mongoose.Schema(
   {
@@ -11,6 +45,10 @@ const productSchema = new mongoose.Schema(
       minLength: [5, 'Product name must be at least 5 characters long'],
       maxLength: [100, 'Product name must not exceed 100 characters'],
     },
+    slug: {
+      type: String,
+      unique: true,
+    },
     description: {
       type: String,
       trim: true,
@@ -18,20 +56,11 @@ const productSchema = new mongoose.Schema(
       minLength: [5, 'Product description must be at least 20 characters'],
       maxLength: [500, 'Product description must not exceed 500 characters'],
     },
-    price: {
-      type: Number,
-      required: [true, 'Product price is required'],
-      min: [0, 'Product price must be greater than 0'],
-    },
-    stock: {
-      type: Number,
-      required: [true, 'Product stock is required'],
-    },
     ratingsAverage: {
       type: Number,
       min: [1, 'Rating must be at least 1'],
       max: [5, 'Rating must be less than 5'],
-      default: 4.5,
+      default: 1,
     },
     ratingsQuantity: {
       type: Number,
@@ -40,7 +69,25 @@ const productSchema = new mongoose.Schema(
     imageCover: {
       type: String,
     },
-    images: [String],
+    openTime: {
+      type: Date,
+      required: [true, 'Product open time is required'],
+      default: Date.now(),
+    },
+    closeTime: {
+      type: Date,
+    },
+    type: {
+      type: String,
+      enum: ['merch', 'digital'],
+      default: 'merch',
+    },
+    status: {
+      type: String,
+      enum: ['active', 'inactive', 'rerun'],
+      default: 'active',
+    },
+    items: [itemSchema],
   },
   {
     timestamps: true,
@@ -49,10 +96,10 @@ const productSchema = new mongoose.Schema(
   },
 );
 
-// productSchema.pre('save', function (next) {
-//   this.slug = slugify(this.name, { lower: true });
-//   next();
-// });
+productSchema.pre('save', function (next) {
+  this.slug = slugify(this.name, { lower: true });
+  next();
+});
 
 productSchema.virtual('reviews', {
   ref: 'Review',

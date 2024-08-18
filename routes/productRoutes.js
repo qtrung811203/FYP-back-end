@@ -14,18 +14,19 @@ router
   .post(
     authController.protect,
     authController.inRole('manager', 'admin'),
-    productController.uploadImagesProduct,
+    productController.uploadProductImageCover,
     productController.createProduct,
   );
 
 //api/v1/products/:id
 router
-  .route('/:id')
+  .route('/:slug')
   .get(productController.getProduct)
+  .post(productController.addItemToProduct)
   .patch(
     authController.protect,
     authController.inRole('manager', 'admin'),
-    productController.uploadImagesProduct,
+    productController.updateProductImageCover,
     productController.updateProduct,
   )
   .delete(
