@@ -75,6 +75,7 @@ const productSchema = new mongoose.Schema(
     },
     imageCover: {
       type: String,
+      required: [true, 'Product image is required'],
     },
     openTime: {
       type: Date,
@@ -105,6 +106,25 @@ const productSchema = new mongoose.Schema(
 
 productSchema.pre('save', function (next) {
   this.slug = slugify(this.name, { lower: true });
+  next();
+});
+
+productSchema.pre('save', function (next) {
+  if (this.closeTime && this.openTime && this.closeTime <= this.openTime) {
+    return next(new Error('Close time must be after open time'));
+  }
+  next();
+});
+
+productSchema.pre('findOneAndUpdate', function (next) {
+  const update = this.getUpdate();
+  if (
+    update.closeTime &&
+    update.openTime &&
+    update.closeTime <= update.openTime
+  ) {
+    return next(new Error('Close time must be after open time'));
+  }
   next();
 });
 
