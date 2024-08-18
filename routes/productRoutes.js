@@ -14,18 +14,44 @@ router
   .post(
     authController.protect,
     authController.inRole('manager', 'admin'),
-    productController.uploadImagesProduct,
+    productController.uploadImage('imageCover'),
     productController.createProduct,
   );
 
-//api/v1/products/:id
+//api/v1/products/:slug/item
 router
-  .route('/:id')
+  .route('/:slug/items')
+  .post(
+    authController.protect,
+    authController.inRole('manager', 'admin'),
+    productController.uploadImage('imageItem'),
+    productController.addItemToProduct,
+  );
+
+//api/v1/products/:slug/items/:itemId
+router
+  .route('/:slug/items/:itemId')
+  .get(productController.getItem)
+  .patch(
+    authController.protect,
+    authController.inRole('manager', 'admin'),
+    productController.updateImage('imageItem'),
+    productController.updateItem,
+  )
+  .delete(
+    authController.protect,
+    authController.inRole('manager', 'admin'),
+    productController.deleteItem,
+  );
+
+//api/v1/products/:slug
+router
+  .route('/:slug')
   .get(productController.getProduct)
   .patch(
     authController.protect,
     authController.inRole('manager', 'admin'),
-    productController.uploadImagesProduct,
+    productController.updateImage('imageCover'),
     productController.updateProduct,
   )
   .delete(
