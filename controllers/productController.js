@@ -4,18 +4,30 @@ const AppError = require('../utils/appError');
 const APIFeatures = require('../utils/apiFeatures');
 
 const cloudinary = require('../services/cloudinaryConfig');
-const { uploadImagesProduct } = require('../services/multerConfig');
+const {
+  uploadImageProduct,
+  uploadImageItem,
+} = require('../services/multerConfig');
 
 // MIDDLEWARE
-exports.uploadProductImageCover = uploadImagesProduct.single('imageCover');
-
-exports.updateProductImageCover = async (req, res, next) => {
+//imageCover
+exports.uploadProductImageCover = uploadImageProduct.single('imageCover');
+exports.updateProductImageCover = catchAsync(async (req, res, next) => {
   const product = await Product.findOne({ slug: req.params.slug });
   if (!product) {
     return next(new AppError('No document found with that slug', 404));
   }
-  return uploadImagesProduct.single('imageCover');
-};
+  const upload = uploadImageProduct.single('imageCover');
+  upload(req, res, async (err) => {
+    if (err) {
+      return next(new AppError(err.message, 400));
+    }
+    next();
+  });
+});
+
+//ItemImages
+exports.uploadImageItem = uploadImageItem.single('imageItem');
 
 // HELPER FUNCTIONS
 const getPublicIdCloudinary = (cloudUrl) => {
@@ -24,15 +36,10 @@ const getPublicIdCloudinary = (cloudUrl) => {
   return `${folder}/${fileName}`;
 };
 
-const deleteImgCloudinary = async (imgCoverUrl, imgs) => {
+const deleteImgCloudinary = async (imgCoverUrl) => {
   const imgCoverId = getPublicIdCloudinary(imgCoverUrl);
+  console.log(imgCoverId);
   await cloudinary.uploader.destroy(imgCoverId);
-  // if (imgs.length > 0) {
-  //   const imgsId = imgs.map((img) => getPublicIdCloudinary(img));
-  //   imgsId.forEach(async (imgId) => {
-  //     await cloudinary.uploader.destroy(imgId);
-  //   });
-  // }
 };
 
 //ROUTES HANDLERS
@@ -57,10 +64,10 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
 });
 
 exports.createProduct = catchAsync(async (req, res, next) => {
-  if (!req.files.imageCover) {
-    return next(new AppError('Please upload imageCover and images', 400));
+  if (!req.file) {
+    return next(new AppError('Please upload imageCover', 400));
   }
-  req.body.imageCover = req.files.imageCover[0].path;
+  req.body.imageCover = req.file.path;
   const product = await Product.create(req.body);
   res.status(201).json({
     status: 'success',
@@ -87,13 +94,12 @@ exports.getProduct = catchAsync(async (req, res, next) => {
 });
 
 exports.updateProduct = catchAsync(async (req, res, next) => {
-  // 1 - Check if imageCover and images are not empty
-  // console.log(req.files);
-  if (req.files.imageCover) {
+  // 1 - Check if imageCover not empty
+  if (req.file) {
     // 2 - delete old imageCover and images
     const product = await Product.findOne({ slug: req.params.slug });
     deleteImgCloudinary(product.imageCover);
-    req.body.imageCover = req.files.imageCover[0].path;
+    req.body.imageCover = req.file.path;
   }
 
   const product = await Product.findOneAndUpdate(
@@ -116,8 +122,8 @@ exports.updateProduct = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteProduct = catchAsync(async (req, res, next) => {
-  const product = await Product.findByIdAndDelete(req.params.id);
-  deleteImgCloudinary(product.imageCover, product.images);
+  const product = await Product.findOneAndDelete({ slug: req.params.slug });
+  deleteImgCloudinary(product.imageCover);
 
   if (!product) {
     return next(new AppError('No document found with that ID', 404));
@@ -128,4 +134,23 @@ exports.deleteProduct = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.addItemToProduct = catchAsync(async (req, res, next) => {});
+//Items
+exports.addItemToProduct = catchAsync(async (req, res, next) => {
+  if (!req.file) {
+    return next(new AppError('Please upload imageItem', 400));
+  }
+  const product = await Product.findOne({ slug: req.params.slug });
+  if (!product) {
+    return next(new AppError('No document found with that slug', 404));
+  }
+  req.body.imageItem = req.file.path;
+  product.items.push(req.body);
+  await product.save();
+
+  res.status(201).json({
+    status: 'success',
+    data: {
+      data: product,
+    },
+  });
+});

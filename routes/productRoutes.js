@@ -18,11 +18,20 @@ router
     productController.createProduct,
   );
 
-//api/v1/products/:id
+//api/v1/products/:slug/item
+router
+  .route('/:slug/items')
+  .post(
+    authController.protect,
+    authController.inRole('manager', 'admin'),
+    productController.uploadImageItem,
+    productController.addItemToProduct,
+  );
+
+//api/v1/products/:slug
 router
   .route('/:slug')
   .get(productController.getProduct)
-  .post(productController.addItemToProduct)
   .patch(
     authController.protect,
     authController.inRole('manager', 'admin'),

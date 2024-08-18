@@ -11,7 +11,7 @@ const itemSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Item category is required'],
   },
-  itemImages: {
+  imageItem: {
     type: String,
     required: [true, 'Item image is required'],
   },
@@ -33,6 +33,13 @@ const itemSchema = new mongoose.Schema({
       return this.stock > 0 ? 'inStock' : 'outOfStock';
     },
   },
+});
+
+itemSchema.pre('save', function (next) {
+  if (this.isModified('stock')) {
+    this.status = this.stock > 0 ? 'inStock' : 'outOfStock';
+  }
+  next();
 });
 
 const productSchema = new mongoose.Schema(
