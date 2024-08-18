@@ -14,7 +14,7 @@ router
   .post(
     authController.protect,
     authController.inRole('manager', 'admin'),
-    productController.uploadProductImageCover,
+    productController.uploadImage('imageCover'),
     productController.createProduct,
   );
 
@@ -24,8 +24,24 @@ router
   .post(
     authController.protect,
     authController.inRole('manager', 'admin'),
-    productController.uploadImageItem,
+    productController.uploadImage('imageItem'),
     productController.addItemToProduct,
+  );
+
+//api/v1/products/:slug/items/:itemId
+router
+  .route('/:slug/items/:itemId')
+  .get(productController.getItem)
+  .patch(
+    authController.protect,
+    authController.inRole('manager', 'admin'),
+    productController.updateImage('imageItem'),
+    productController.updateItem,
+  )
+  .delete(
+    authController.protect,
+    authController.inRole('manager', 'admin'),
+    productController.deleteItem,
   );
 
 //api/v1/products/:slug
@@ -35,7 +51,7 @@ router
   .patch(
     authController.protect,
     authController.inRole('manager', 'admin'),
-    productController.updateProductImageCover,
+    productController.updateImage('imageCover'),
     productController.updateProduct,
   )
   .delete(
