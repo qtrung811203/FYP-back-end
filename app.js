@@ -20,6 +20,10 @@ const app = express();
 //Error handling
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
+const nodeCron = require('./utils/nodeCron');
+
+//CRON JOB
+nodeCron.start();
 
 //MIDDLEWARES
 //Body parser (reading data from body into req.body)
