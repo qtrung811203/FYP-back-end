@@ -1,4 +1,5 @@
 const Review = require('../models/reviewModel');
+const Product = require('../models/productModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 

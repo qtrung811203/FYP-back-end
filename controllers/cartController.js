@@ -19,23 +19,40 @@ exports.getMyCart = catchAsync(async (req, res, next) => {
 
 exports.putItemToCart = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
-  const { productId, quantity } = req.body;
+  const { productId, itemId, quantity } = req.body;
+
+  // Find the product by productId
+  const product = await Product.findById(productId);
+  if (!product) {
+    return next(new AppError('Product not found', 404));
+  }
+
+  // Check if the itemId exists within the product's items array
+  const itemExists = product.items.some(
+    (item) => item._id.toString() === itemId,
+  );
+  if (!itemExists) {
+    return next(new AppError('Item not found in the specified product', 404));
+  }
+
   let cart = await Cart.findOne({ userId });
 
   if (!cart) {
     cart = await Cart.create({
       userId,
-      products: [{ productId, quantity }],
+      items: [{ productId, itemId, quantity }],
     });
   } else {
-    const productIndex = cart.products.findIndex(
-      (product) => product.productId.id === productId,
+    const itemIndex = cart.items.findIndex(
+      (item) =>
+        item.productId.toString() === productId &&
+        item.itemId.toString() === itemId,
     );
 
-    if (productIndex === -1) {
-      cart.products.push({ productId, quantity });
+    if (itemIndex === -1) {
+      cart.items.push({ productId, itemId, quantity });
     } else {
-      cart.products[productIndex].quantity = quantity;
+      cart.items[itemIndex].quantity = quantity;
     }
   }
 
@@ -43,7 +60,7 @@ exports.putItemToCart = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     data: {
-      data: cart,
+      cart,
     },
   });
 });

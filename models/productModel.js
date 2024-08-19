@@ -1,47 +1,6 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
 
-const itemSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'Item name is required'],
-    trim: true,
-  },
-  category: {
-    type: String,
-    required: [true, 'Item category is required'],
-  },
-  imageItem: {
-    type: String,
-    required: [true, 'Item image is required'],
-  },
-  price: {
-    type: Number,
-    required: [true, 'Item price is required'],
-  },
-  maxBuy: {
-    type: Number,
-  },
-  stock: {
-    type: Number,
-    required: [true, 'Item stock is required'],
-  },
-  status: {
-    type: String,
-    enum: ['inStock', 'outOfStock'],
-    default: function () {
-      return this.stock > 0 ? 'inStock' : 'outOfStock';
-    },
-  },
-});
-
-itemSchema.pre('save', function (next) {
-  if (this.isModified('stock')) {
-    this.status = this.stock > 0 ? 'inStock' : 'outOfStock';
-  }
-  next();
-});
-
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -96,7 +55,6 @@ const productSchema = new mongoose.Schema(
       enum: ['active', 'inactive', 'rerun'],
       default: 'active',
     },
-    items: [itemSchema],
   },
   {
     timestamps: true,
@@ -159,6 +117,12 @@ productSchema.pre('findOneAndUpdate', async function (next) {
 productSchema.virtual('reviews', {
   ref: 'Review',
   foreignField: 'product',
+  localField: '_id',
+});
+
+productSchema.virtual('items', {
+  ref: 'Item',
+  foreignField: 'productId',
   localField: '_id',
 });
 

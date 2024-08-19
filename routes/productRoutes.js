@@ -3,9 +3,11 @@ const router = express.Router();
 const productController = require('../controllers/productController');
 const authController = require('../controllers/authController');
 const reviewRouter = require('./reviewRoutes');
+const itemRouter = require('./itemRoutes');
 
 //api/v1/products/:productId/reviews
 router.use('/:slug/reviews', reviewRouter);
+router.use('/:slug/items', itemRouter);
 
 //api/v1/products
 router
@@ -14,34 +16,8 @@ router
   .post(
     authController.protect,
     authController.inRole('manager', 'admin'),
-    productController.uploadImage('imageCover'),
+    productController.uploadImage,
     productController.createProduct,
-  );
-
-//api/v1/products/:slug/item
-router
-  .route('/:slug/items')
-  .post(
-    authController.protect,
-    authController.inRole('manager', 'admin'),
-    productController.uploadImage('imageItem'),
-    productController.addItemToProduct,
-  );
-
-//api/v1/products/:slug/items/:itemId
-router
-  .route('/:slug/items/:itemId')
-  .get(productController.getItem)
-  .patch(
-    authController.protect,
-    authController.inRole('manager', 'admin'),
-    productController.updateImage('imageItem'),
-    productController.updateItem,
-  )
-  .delete(
-    authController.protect,
-    authController.inRole('manager', 'admin'),
-    productController.deleteItem,
   );
 
 //api/v1/products/:slug
@@ -51,7 +27,7 @@ router
   .patch(
     authController.protect,
     authController.inRole('manager', 'admin'),
-    productController.updateImage('imageCover'),
+    productController.updateImage,
     productController.updateProduct,
   )
   .delete(
