@@ -8,10 +8,11 @@ router.use(authController.protect);
 router
   .route('/')
   .get(cartController.getMyCart)
-  .post(cartController.putItemToCart)
+  .post(cartController.addItemToCart)
   .patch(cartController.updateCart)
   .delete(cartController.deleteAllItemsFromCart);
-router.route('/:productId').delete(cartController.deleteOneItemFromCart);
+
+router.route('/:itemId').delete(cartController.deleteOneItemFromCart);
 
 //for admin & manager
 router.use(authController.inRole('manager', 'admin'));

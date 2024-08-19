@@ -1,4 +1,5 @@
 const Cart = require('../models/cartModel');
+const Product = require('../models/productModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
@@ -17,40 +18,23 @@ exports.getMyCart = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.putItemToCart = catchAsync(async (req, res, next) => {
+exports.addItemToCart = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
-  const { productId, itemId, quantity } = req.body;
-
-  // Find the product by productId
-  const product = await Product.findById(productId);
-  if (!product) {
-    return next(new AppError('Product not found', 404));
-  }
-
-  // Check if the itemId exists within the product's items array
-  const itemExists = product.items.some(
-    (item) => item._id.toString() === itemId,
-  );
-  if (!itemExists) {
-    return next(new AppError('Item not found in the specified product', 404));
-  }
+  const { itemId, quantity } = req.body;
 
   let cart = await Cart.findOne({ userId });
-
   if (!cart) {
     cart = await Cart.create({
       userId,
-      items: [{ productId, itemId, quantity }],
+      items: [{ itemId, quantity }],
     });
   } else {
     const itemIndex = cart.items.findIndex(
-      (item) =>
-        item.productId.toString() === productId &&
-        item.itemId.toString() === itemId,
+      (item) => item.itemId._id.toString() === itemId,
     );
 
     if (itemIndex === -1) {
-      cart.items.push({ productId, itemId, quantity });
+      cart.items.push({ itemId, quantity });
     } else {
       cart.items[itemIndex].quantity = quantity;
     }
@@ -91,14 +75,15 @@ exports.updateCart = catchAsync(async (req, res, next) => {
 
 exports.deleteOneItemFromCart = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
-  const { productId } = req.params;
+  const { itemId } = req.params;
   const cart = await Cart.findOne({ userId });
   if (!cart) {
     return next(new AppError('No cart found with that ID', 404));
   }
-  cart.products = cart.products.filter(
-    (product) => product.productId.id !== productId,
+  cart.items = cart.items.filter(
+    (item) => item.itemId._id.toString() !== itemId,
   );
+
   await cart.save();
 
   res.status(200).json({
@@ -116,7 +101,7 @@ exports.deleteAllItemsFromCart = catchAsync(async (req, res, next) => {
     return next(new AppError('No cart found with that ID', 404));
   }
 
-  cart.products = [];
+  cart.items = [];
   cart.note = '';
 
   await cart.save();
@@ -126,6 +111,7 @@ exports.deleteAllItemsFromCart = catchAsync(async (req, res, next) => {
   });
 });
 
+//NOT YET IMPLEMENTED
 //admin & manager
 exports.getOneCart = catchAsync(async (req, res, next) => {
   const { id } = req.params;

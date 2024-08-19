@@ -8,13 +8,9 @@ const cartSchema = new mongoose.Schema(
     },
     items: [
       {
-        productId: {
-          type: mongoose.Schema.ObjectId,
-          ref: 'Product',
-          required: true,
-        },
         itemId: {
           type: mongoose.Schema.ObjectId,
+          ref: 'Item',
           required: true,
         },
         quantity: {
@@ -51,26 +47,25 @@ const cartSchema = new mongoose.Schema(
 
 cartSchema.pre(/^find/, async function (next) {
   this.populate({
-    path: 'items.productId',
-    select: 'name', // Get the name of the product
+    path: 'items.itemId',
   });
-
   next();
 });
 
-// //Calculate total price and total quantity
-// cartSchema.pre('save', async function (next) {
-//   let totalPrice = 0;
-//   let totalQuantity = 0;
-//   await this.populate({ path: 'products.productId' });
-//   this.products.forEach((product) => {
-//     totalPrice += product.productId.price * product.quantity;
-//     totalQuantity += product.quantity;
-//   });
-//   this.totalPrice = totalPrice;
-//   this.totalQuantity = totalQuantity;
-//   next();
-// });
+//NOT YET IMPLEMENT
+//Calculate total price and total quantity
+cartSchema.pre('save', async function (next) {
+  let totalPrice = 0;
+  let totalQuantity = 0;
+  await this.populate({ path: 'items.itemId' });
+  this.items.forEach((item) => {
+    totalPrice += item.price * item.quantity;
+    totalQuantity += item.quantity;
+  });
+  this.totalPrice = totalPrice;
+  this.totalQuantity = totalQuantity;
+  next();
+});
 
 const Cart = mongoose.model('Cart', cartSchema);
 module.exports = Cart;
