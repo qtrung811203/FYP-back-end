@@ -5,7 +5,7 @@ const authController = require('../controllers/authController');
 const reviewRouter = require('./reviewRoutes');
 
 //api/v1/products/:productId/reviews
-router.use('/:productId/reviews', reviewRouter);
+router.use('/:slug/reviews', reviewRouter);
 
 //api/v1/products
 router
