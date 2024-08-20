@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { path } = require('../app');
 
 const cartSchema = new mongoose.Schema(
   {
@@ -7,11 +6,11 @@ const cartSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    products: [
+    items: [
       {
-        productId: {
+        itemId: {
           type: mongoose.Schema.ObjectId,
-          ref: 'Product',
+          ref: 'Item',
           required: true,
         },
         quantity: {
@@ -46,9 +45,9 @@ const cartSchema = new mongoose.Schema(
   },
 );
 
-cartSchema.pre(/^find/, function (next) {
+cartSchema.pre(/^find/, async function (next) {
   this.populate({
-    path: 'products.productId',
+    path: 'items.itemId',
   });
   next();
 });
@@ -57,10 +56,10 @@ cartSchema.pre(/^find/, function (next) {
 cartSchema.pre('save', async function (next) {
   let totalPrice = 0;
   let totalQuantity = 0;
-  await this.populate({ path: 'products.productId' });
-  this.products.forEach((product) => {
-    totalPrice += product.productId.price * product.quantity;
-    totalQuantity += product.quantity;
+  await this.populate({ path: 'items.itemId' });
+  this.items.forEach((item) => {
+    totalPrice += item.itemId.price * item.quantity;
+    totalQuantity += item.quantity;
   });
   this.totalPrice = totalPrice;
   this.totalQuantity = totalQuantity;

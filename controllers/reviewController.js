@@ -1,4 +1,5 @@
 const Review = require('../models/reviewModel');
+const Product = require('../models/productModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
@@ -12,9 +13,18 @@ exports.checkUserReview = catchAsync(async (req, res, next) => {
 });
 
 exports.getAllReviews = catchAsync(async (req, res, next) => {
-  const filter = {};
-  if (req.params.productId) filter.product = req.params.productId;
+  let filter = {};
+
+  if (req.params.slug) {
+    const product = await Product.findOne({ slug: req.params.slug });
+    if (!product) {
+      return next(new AppError('No product found with that slug', 404));
+    }
+    filter = { product: product._id };
+  }
+
   const reviews = await Review.find(filter);
+
   res.status(200).json({
     status: 'success',
     results: reviews.length,
@@ -25,8 +35,14 @@ exports.getAllReviews = catchAsync(async (req, res, next) => {
 });
 
 exports.createReview = catchAsync(async (req, res, next) => {
-  if (!req.body.product) req.body.product = req.params.productId;
+  const product = await Product.findOne({ slug: req.params.slug });
+  if (!product) {
+    return next(new AppError('No product found with that slug', 404));
+  }
+
+  if (!req.body.product) req.body.product = product._id;
   if (!req.body.user) req.body.user = req.user.id;
+
   const newReview = await Review.create(req.body);
   res.status(201).json({
     status: 'success',
@@ -50,13 +66,29 @@ exports.getReview = catchAsync(async (req, res, next) => {
 });
 
 exports.updateReview = catchAsync(async (req, res, next) => {
-  const review = await Review.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
-  if (!review) {
-    return next(new AppError('No review found with that ID', 404));
+  const product = await Product.findOne({ slug: req.params.slug });
+  if (!product) {
+    return next(new AppError('No product found with that slug', 404));
   }
+
+  const review = await Review.findOneAndUpdate(
+    { _id: req.params.reviewId, product: product._id },
+    req.body,
+    {
+      new: true,
+      runValidators: true,
+    },
+  );
+
+  if (!review) {
+    return next(
+      new AppError(
+        'No review found with that ID for the specified product',
+        404,
+      ),
+    );
+  }
+
   res.status(200).json({
     status: 'success',
     data: {

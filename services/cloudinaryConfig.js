@@ -6,4 +6,16 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-module.exports = cloudinary;
+const getPublicIdCloudinary = (cloudUrl) => {
+  const [, , , , , , , folder, fileNameWithExt] = cloudUrl.split('/');
+  const fileName = fileNameWithExt.split('.')[0];
+  return `${folder}/${fileName}`;
+};
+
+const deleteImgCloudinary = async (imgCoverUrl) => {
+  const imgCoverId = getPublicIdCloudinary(imgCoverUrl);
+  console.log(imgCoverId);
+  await cloudinary.uploader.destroy(imgCoverId);
+};
+
+module.exports = { getPublicIdCloudinary, deleteImgCloudinary, cloudinary };
