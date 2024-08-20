@@ -3,7 +3,7 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const cartController = require('../controllers/cartController');
 
-// for user
+//user
 router.use(authController.protect);
 router
   .route('/')
@@ -14,9 +14,10 @@ router
 
 router.route('/:itemId').delete(cartController.deleteOneItemFromCart);
 
-//for admin & manager
+//admin & manager
 router.use(authController.inRole('manager', 'admin'));
 router.route('/all').get(cartController.getAllCarts);
+
 router
   .route('/all/:id')
   .get(cartController.getOneCart)

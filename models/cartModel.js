@@ -52,14 +52,13 @@ cartSchema.pre(/^find/, async function (next) {
   next();
 });
 
-//NOT YET IMPLEMENT
 //Calculate total price and total quantity
 cartSchema.pre('save', async function (next) {
   let totalPrice = 0;
   let totalQuantity = 0;
   await this.populate({ path: 'items.itemId' });
   this.items.forEach((item) => {
-    totalPrice += item.price * item.quantity;
+    totalPrice += item.itemId.price * item.quantity;
     totalQuantity += item.quantity;
   });
   this.totalPrice = totalPrice;

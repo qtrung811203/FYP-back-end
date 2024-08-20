@@ -111,8 +111,18 @@ exports.deleteAllItemsFromCart = catchAsync(async (req, res, next) => {
   });
 });
 
-//NOT YET IMPLEMENTED
 //admin & manager
+exports.getAllCarts = catchAsync(async (req, res, next) => {
+  const carts = await Cart.find();
+  res.status(200).json({
+    status: 'success',
+    results: carts.length,
+    data: {
+      data: carts,
+    },
+  });
+});
+
 exports.getOneCart = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const cart = await Cart.findById(id);
@@ -123,17 +133,6 @@ exports.getOneCart = catchAsync(async (req, res, next) => {
     status: 'success',
     data: {
       data: cart,
-    },
-  });
-});
-
-exports.getAllCarts = catchAsync(async (req, res, next) => {
-  const carts = await Cart.find();
-  res.status(200).json({
-    status: 'success',
-    results: carts.length,
-    data: {
-      data: carts,
     },
   });
 });
