@@ -22,7 +22,7 @@ const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const nodeCron = require('./utils/nodeCron');
 
-//CRON JOB
+//CRON JOB (Every 24 hours)
 nodeCron.start();
 
 //MIDDLEWARES
