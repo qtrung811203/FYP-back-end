@@ -117,3 +117,63 @@ exports.deleteProduct = catchAsync(async (req, res, next) => {
     data: null,
   });
 });
+
+//CUSTOM ROUTES
+exports.getHomeProducts = catchAsync(async (req, res, next) => {
+  //status in ['active', 'rerun']
+  const statusCondition = { status: { $in: ['active', 'rerun'] } };
+
+  //add secondImage to newProducts
+  const addSecondImagePipeline = [
+    {
+      $lookup: {
+        from: 'items',
+        let: { productId: '$_id' }, //_id from product
+        pipeline: [
+          { $match: { $expr: { $eq: ['$productId', '$$productId'] } } },
+          { $sort: { _id: 1 } },
+          { $limit: 1 },
+        ],
+        as: 'firstItem',
+      },
+    },
+    {
+      $addFields: {
+        secondImage: { $arrayElemAt: ['$firstItem.imageItem', 0] },
+      },
+    },
+    { $project: { firstItem: 0 } }, //remove firstItem
+  ];
+
+  const newProducts = await Product.aggregate([
+    { $match: statusCondition },
+    { $sort: { createdAt: -1 } },
+    { $limit: 10 },
+    ...addSecondImagePipeline,
+  ]);
+
+  const newMerch = await Product.aggregate([
+    { $match: { ...statusCondition, type: 'merch' } },
+    { $sort: { createdAt: -1 } },
+    { $limit: 10 },
+    ...addSecondImagePipeline,
+  ]);
+
+  const almostEnd = await Product.aggregate([
+    { $match: statusCondition },
+    { $sort: { closeTime: 1 } },
+    { $limit: 10 },
+    ...addSecondImagePipeline,
+  ]);
+
+  // const products = await Product.find({ isHome: true });
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      newProducts,
+      newMerch,
+      almostEnd,
+    },
+  });
+});
