@@ -59,9 +59,67 @@ exports.createProduct = catchAsync(async (req, res, next) => {
 });
 
 exports.getProduct = catchAsync(async (req, res, next) => {
-  const product = await Product.findOne({ slug: req.params.slug })
-    .populate('reviews')
-    .populate('items');
+  // const productQuery = Product.findOne({ slug: req.params.slug })
+  //   .populate('reviews')
+  //   .populate('items');
+
+  // Group items by category
+  const product = await Product.aggregate([
+    {
+      $match: { slug: req.params.slug },
+    },
+    {
+      $lookup: {
+        from: 'items',
+        localField: '_id',
+        foreignField: 'productId',
+        as: 'items',
+      },
+    },
+    {
+      //Tách các item ra khỏi mảng items
+      $unwind: {
+        path: '$items',
+        preserveNullAndEmptyArrays: true, // Giữ sản phẩm ngay cả khi không có items
+      },
+    },
+    {
+      $group: {
+        _id: '$items.category', // Nhóm các item theo category
+        items: { $push: '$items' }, // Gom các item cùng category vào một mảng
+        quantity: { $sum: 1 }, // Đếm số lượng item
+        productInfo: { $first: '$$ROOT' }, // Giữ thông tin của sản phẩm
+      },
+    },
+    {
+      $group: {
+        _id: '$productInfo._id', // Gom lại tất cả các categories dưới cùng một sản phẩm
+        categories: {
+          $push: { category: '$_id', quantity: '$quantity', items: '$items' },
+        }, // Tạo một mảng cho các category và items tương ứng
+        productInfo: { $first: '$productInfo' }, // Lấy thông tin của sản phẩm
+      },
+    },
+    {
+      $replaceRoot: {
+        newRoot: {
+          productInfo: {
+            name: '$productInfo.name',
+            slug: '$productInfo.slug',
+            description: '$productInfo.description',
+            ratingsAverage: '$productInfo.ratingsAverage',
+            ratingsQuantity: '$productInfo.ratingsQuantity',
+            imageCover: '$productInfo.imageCover',
+            openTime: '$productInfo.openTime',
+            type: '$productInfo.type',
+            status: '$productInfo.status',
+          },
+          items: '$categories', // Đặt các category đã nhóm vào trường items
+        },
+      },
+    },
+  ]);
+
   if (!product) {
     return next(new AppError('No document found with that ID', 404));
   }
