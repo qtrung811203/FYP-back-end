@@ -3,10 +3,7 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const APIFeatures = require('../utils/apiFeatures');
 
-const {
-  getPublicIdCloudinary,
-  deleteImgCloudinary,
-} = require('../services/cloudinaryConfig');
+const { deleteImgCloudinary } = require('../services/cloudinaryConfig');
 const { uploadImageProduct } = require('../services/multerConfig');
 
 // MIDDLEWARE
