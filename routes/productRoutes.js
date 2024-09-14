@@ -10,7 +10,7 @@ router.use('/:slug/reviews', reviewRouter);
 router.use('/:slug/items', itemRouter);
 
 //api/v1/products/home-products
-router.get('/home-products', productController.getHomeProducts);
+router.get('/home', productController.getHomeProducts);
 
 //api/v1/products
 router

@@ -1,43 +1,32 @@
+const ProductRepository = require('../repositories/productRepository');
 const Product = require('../models/productModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
-const APIFeatures = require('../utils/apiFeatures');
 
-const {
-  getPublicIdCloudinary,
-  deleteImgCloudinary,
-} = require('../services/cloudinaryConfig');
+const { deleteImgCloudinary } = require('../services/cloudinaryConfig');
 const { uploadImageProduct } = require('../services/multerConfig');
 
 // MIDDLEWARE
 exports.uploadImage = uploadImageProduct.single('imageCover');
-exports.updateImage = () =>
-  catchAsync(async (req, res, next) => {
-    const product = await Product.findOne({ slug: req.params.slug });
-    if (!product) {
-      return next(new AppError('No document found with that slug', 404));
+
+exports.updateImage = catchAsync(async (req, res, next) => {
+  console.log('updateImage');
+  const product = await Product.findOne({ slug: req.params.slug });
+  if (!product) {
+    return next(new AppError('No document found with that slug', 404));
+  }
+  upload = uploadImageProduct.single('imageCover');
+  upload(req, res, async (err) => {
+    if (err) {
+      return next(new AppError(err.message, 400));
     }
-    upload = uploadImageProduct.single('imageCover');
-    upload(req, res, async (err) => {
-      if (err) {
-        return next(new AppError(err.message, 400));
-      }
-      next();
-    });
+    next();
   });
+});
 
 //ROUTES HANDLERS
 exports.getAllProducts = catchAsync(async (req, res, next) => {
-  // Build query
-  const features = new APIFeatures(Product.find(), req.query)
-    .filter()
-    .sort()
-    .limitFields()
-    .paginate();
-
-  // Execute query
-  const products = await features.query;
-
+  const products = await ProductRepository.getAllProducts(req.query);
   res.status(200).json({
     status: 'success',
     results: products.length,
@@ -51,8 +40,10 @@ exports.createProduct = catchAsync(async (req, res, next) => {
   if (!req.file) {
     return next(new AppError('Please upload imageCover', 400));
   }
-  req.body.imageCover = req.file.path;
-  const product = await Product.create(req.body);
+  const product = await ProductRepository.createProduct(
+    req.body,
+    req.file.path,
+  );
   res.status(201).json({
     status: 'success',
     data: {
@@ -62,9 +53,8 @@ exports.createProduct = catchAsync(async (req, res, next) => {
 });
 
 exports.getProduct = catchAsync(async (req, res, next) => {
-  const product = await Product.findOne({ slug: req.params.slug })
-    .populate('reviews')
-    .populate('items');
+  const product = await ProductRepository.getProduct(req.params.slug);
+
   if (!product) {
     return next(new AppError('No document found with that ID', 404));
   }
@@ -78,21 +68,10 @@ exports.getProduct = catchAsync(async (req, res, next) => {
 });
 
 exports.updateProduct = catchAsync(async (req, res, next) => {
-  // 1 - Check if imageCover not empty
-  if (req.file) {
-    // 2 - delete old imageCover and images
-    const product = await Product.findOne({ slug: req.params.slug });
-    deleteImgCloudinary(product.imageCover);
-    req.body.imageCover = req.file.path;
-  }
-
-  const product = await Product.findOneAndUpdate(
-    { slug: req.params.slug },
+  const product = await ProductRepository.updateProduct(
+    req.params.slug,
     req.body,
-    {
-      new: true,
-      runValidators: true,
-    },
+    req.file,
   );
   if (!product) {
     return next(new AppError('No document found with that ID', 404));
@@ -106,8 +85,7 @@ exports.updateProduct = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteProduct = catchAsync(async (req, res, next) => {
-  const product = await Product.findOneAndDelete({ slug: req.params.slug });
-  deleteImgCloudinary(product.imageCover);
+  const product = await ProductRepository.deleteProduct(req.params.slug);
 
   if (!product) {
     return next(new AppError('No document found with that ID', 404));
@@ -120,53 +98,8 @@ exports.deleteProduct = catchAsync(async (req, res, next) => {
 
 //CUSTOM ROUTES
 exports.getHomeProducts = catchAsync(async (req, res, next) => {
-  //status in ['active', 'rerun']
-  const statusCondition = { status: { $in: ['active', 'rerun'] } };
-
-  //add secondImage to newProducts
-  const addSecondImagePipeline = [
-    {
-      $lookup: {
-        from: 'items',
-        let: { productId: '$_id' }, //_id from product
-        pipeline: [
-          { $match: { $expr: { $eq: ['$productId', '$$productId'] } } },
-          { $sort: { _id: 1 } },
-          { $limit: 1 },
-        ],
-        as: 'firstItem',
-      },
-    },
-    {
-      $addFields: {
-        secondImage: { $arrayElemAt: ['$firstItem.imageItem', 0] },
-      },
-    },
-    { $project: { firstItem: 0 } }, //remove firstItem
-  ];
-
-  const newProducts = await Product.aggregate([
-    { $match: statusCondition },
-    { $sort: { createdAt: -1 } },
-    { $limit: 10 },
-    ...addSecondImagePipeline,
-  ]);
-
-  const newMerch = await Product.aggregate([
-    { $match: { ...statusCondition, type: 'merch' } },
-    { $sort: { createdAt: -1 } },
-    { $limit: 10 },
-    ...addSecondImagePipeline,
-  ]);
-
-  const almostEnd = await Product.aggregate([
-    { $match: statusCondition },
-    { $sort: { closeTime: 1 } },
-    { $limit: 10 },
-    ...addSecondImagePipeline,
-  ]);
-
-  // const products = await Product.find({ isHome: true });
+  const { newProducts, newMerch, almostEnd } =
+    await ProductRepository.getHomeProducts();
 
   res.status(200).json({
     status: 'success',

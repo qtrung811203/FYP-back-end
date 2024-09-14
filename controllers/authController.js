@@ -1,17 +1,20 @@
-const User = require('../models/userModel');
-const catchAsync = require('../utils/catchAsync');
 const jwt = require('jsonwebtoken');
-const AppError = require('../utils/appError');
 const { promisify } = require('util');
-const sendEmail = require('../utils/email');
 const crypto = require('crypto');
 
+const User = require('../models/userModel');
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
+const sendEmail = require('../utils/email');
+
+//Sign JWT
 const signToken = (id) => {
   return jwt.sign({ id: id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 };
 
+//Sign JWT, send it to client and set cookie
 const signTokenAndSend = (user, statusCode, res) => {
   const token = signToken(user._id);
   const cookieOptions = {
@@ -61,6 +64,7 @@ exports.login = catchAsync(async (req, res, next) => {
   signTokenAndSend(user, 200, res);
 });
 
+//Middleware to protect routes
 exports.protect = catchAsync(async (req, res, next) => {
   let token;
   // 1 - get token and check if it's there
@@ -143,6 +147,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     message: 'Token sent to email!',
   });
 });
+
 exports.resetPassword = catchAsync(async (req, res, next) => {
   //1 - get user based on the token
   const hashedToken = crypto

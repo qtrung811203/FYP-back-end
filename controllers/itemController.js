@@ -4,14 +4,12 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const APIFeatures = require('../utils/apiFeatures');
 
-const {
-  getPublicIdCloudinary,
-  deleteImgCloudinary,
-} = require('../services/cloudinaryConfig');
+const { deleteImgCloudinary } = require('../services/cloudinaryConfig');
 const { uploadImageItem } = require('../services/multerConfig');
 
 // MIDDLEWARE
 exports.uploadImage = uploadImageItem.single('imageItem');
+
 exports.updateImage = () =>
   catchAsync(async (req, res, next) => {
     const product = await Product.findOne({ slug: req.params.slug });
@@ -100,7 +98,9 @@ exports.updateItem = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteItem = catchAsync(async (req, res, next) => {
-  const item = await Item.findOneAndDelete(req.params.id);
+  console.log(req.params.id);
+  const item = await Item.findByIdAndDelete(req.params.id);
+  console.log(item);
   if (!item) {
     return next(new AppError('No item found with that ID', 404));
   }

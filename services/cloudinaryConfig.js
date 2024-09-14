@@ -14,7 +14,6 @@ const getPublicIdCloudinary = (cloudUrl) => {
 
 const deleteImgCloudinary = async (imgCoverUrl) => {
   const imgCoverId = getPublicIdCloudinary(imgCoverUrl);
-  console.log(imgCoverId);
   await cloudinary.uploader.destroy(imgCoverId);
 };
 
