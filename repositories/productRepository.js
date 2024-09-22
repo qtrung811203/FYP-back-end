@@ -1,6 +1,15 @@
 const Product = require('../models/productModel');
 const APIFeatures = require('../utils/apiFeatures');
+const { deleteImgCloudinary } = require('../services/cloudinaryConfig');
+const AppError = require('../utils/appError');
 
+//UTILS FUNCTIONS
+function deleteImgProduct(files) {
+  if (files.imageCover) deleteImgCloudinary(files.imageCover[0].path);
+  if (files.images) files.images.map((file) => deleteImgCloudinary(file.path));
+}
+
+//REPOSITORY
 class ProductRepository {
   //ALL PRODUCTS
   async getAllProducts(queryString) {
@@ -15,9 +24,23 @@ class ProductRepository {
   }
 
   //CREATE PRODUCT
-  async createProduct(data, file) {
-    data.imageCover = file;
-    return await Product.create(data);
+  async createProduct(data, files, next) {
+    if (!(files && files.imageCover && files.images)) {
+      deleteImgProduct(files);
+      return next(new AppError('Please upload image of product', 400));
+    }
+
+    data.imageCover = files.imageCover[0].path;
+    data.images = files.images.map((file) => file.path);
+
+    return Product.create(data)
+      .then((product) => {
+        return product;
+      })
+      .catch(async (err) => {
+        deleteImgProduct(files);
+        return next(new AppError(err.message, 400));
+      });
   }
 
   //GET PRODUCT
@@ -102,7 +125,9 @@ class ProductRepository {
   //DELETE PRODUCT
   async deleteProduct(slug) {
     const product = await Product.findOneAndDelete({ slug: slug });
-    deleteImgCloudinary(product.imageCover);
+    await deleteImgCloudinary(product.imageCover);
+    await Promise.all(product.images.map((img) => deleteImgCloudinary(img)));
+    return product;
   }
 
   //GET HOME PRODUCTS

@@ -37,6 +37,7 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Product image is required'],
     },
+    images: [String],
     openTime: {
       type: Date,
       required: [true, 'Product open time is required'],
