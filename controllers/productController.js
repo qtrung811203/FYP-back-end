@@ -16,7 +16,10 @@ exports.updateImage = catchAsync(async (req, res, next) => {
   if (!product) {
     return next(new AppError('No document found with that slug', 404));
   }
-  upload = uploadImageProduct.single('imageCover');
+  upload = uploadImageProduct.fields([
+    { name: 'imageCover', maxCount: 1 },
+    { name: 'images' },
+  ]);
   upload(req, res, async (err) => {
     if (err) {
       return next(new AppError(err.message, 400));
@@ -75,7 +78,7 @@ exports.updateProduct = catchAsync(async (req, res, next) => {
   const product = await ProductRepository.updateProduct(
     req.params.slug,
     req.body,
-    req.file,
+    req.files,
   );
   if (!product) {
     return next(new AppError('No document found with that ID', 404));

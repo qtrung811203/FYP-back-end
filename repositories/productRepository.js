@@ -107,11 +107,18 @@ class ProductRepository {
   }
 
   //UPDATE PRODUCT
-  async updateProduct(slug, data, file) {
-    if (file) {
+  async updateProduct(slug, data, files) {
+    if (files) {
       const product = await Product.findOne({ slug: slug });
-      deleteImgCloudinary(product.imageCover);
-      data.imageCover = file;
+      console.log(product);
+      if (files.imageCover) {
+        await deleteImgCloudinary(product.imageCover);
+        data.imageCover = files.imageCover[0].path;
+      }
+      if (files.images) {
+        Promise.all(product.images.map((img) => deleteImgCloudinary(img)));
+        data.images = files.images.map((file) => file.path);
+      }
     }
 
     const product = await Product.findOneAndUpdate({ slug: slug }, data, {
