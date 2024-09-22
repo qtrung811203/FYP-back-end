@@ -8,11 +8,10 @@ const authController = require('../controllers/authController');
 
 router
   .route('/')
-  .get(itemController.getAllItems)
+  .get(itemController.getProductItems)
   .post(
     authController.protect,
     authController.inRole('manager', 'admin'),
-    itemController.uploadImage,
     itemController.createItem,
   );
 
@@ -22,7 +21,6 @@ router
   .patch(
     authController.protect,
     authController.inRole('manager', 'admin'),
-    itemController.updateImage,
     itemController.updateItem,
   )
   .delete(
