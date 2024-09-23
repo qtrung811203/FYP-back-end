@@ -1,6 +1,17 @@
 const Product = require('../models/productModel');
-const APIFeatures = require('../utils/apiFeatures');
+const Item = require('../models/itemModel');
 
+const APIFeatures = require('../utils/apiFeatures');
+const { deleteImgCloudinary } = require('../services/cloudinaryConfig');
+const AppError = require('../utils/appError');
+
+//UTILS FUNCTIONS
+function deleteImgProduct(files) {
+  if (files.imageCover) deleteImgCloudinary(files.imageCover[0].path);
+  if (files.images) files.images.map((file) => deleteImgCloudinary(file.path));
+}
+
+//REPOSITORY
 class ProductRepository {
   //ALL PRODUCTS
   async getAllProducts(queryString) {
@@ -15,9 +26,23 @@ class ProductRepository {
   }
 
   //CREATE PRODUCT
-  async createProduct(data, file) {
-    data.imageCover = file;
-    return await Product.create(data);
+  async createProduct(data, files, next) {
+    if (!(files && files.imageCover && files.images)) {
+      deleteImgProduct(files);
+      return next(new AppError('Please upload image of product', 400));
+    }
+
+    data.imageCover = files.imageCover[0].path;
+    data.images = files.images.map((file) => file.path);
+
+    return Product.create(data)
+      .then((product) => {
+        return product;
+      })
+      .catch(async (err) => {
+        deleteImgProduct(files);
+        return next(new AppError(err.message, 400));
+      });
   }
 
   //GET PRODUCT
@@ -84,17 +109,31 @@ class ProductRepository {
   }
 
   //UPDATE PRODUCT
-  async updateProduct(slug, data, file) {
-    if (file) {
+  async updateProduct(slug, data, files) {
+    if (files) {
       const product = await Product.findOne({ slug: slug });
-      deleteImgCloudinary(product.imageCover);
-      data.imageCover = file;
+      const item = await Item.find({ productId: product._id });
+      if (files.imageCover) {
+        await deleteImgCloudinary(product.imageCover);
+        data.imageCover = files.imageCover[0].path;
+      }
+      if (files.images) {
+        if (item.length > 0) {
+          item.map((i) => {
+            i.imageItem =
+              'https://res.cloudinary.com/dje0spcns/image/upload/v1727022373/products/default.jpg';
+            i.save();
+          });
+        }
+        Promise.all(product.images.map((img) => deleteImgCloudinary(img)));
+        data.images = files.images.map((file) => file.path);
+      }
     }
 
     const product = await Product.findOneAndUpdate({ slug: slug }, data, {
       new: true,
       runValidators: true,
-    });
+    }).populate('items');
 
     return product;
   }
@@ -102,7 +141,10 @@ class ProductRepository {
   //DELETE PRODUCT
   async deleteProduct(slug) {
     const product = await Product.findOneAndDelete({ slug: slug });
-    deleteImgCloudinary(product.imageCover);
+    await Item.deleteMany({ productId: product._id });
+    await deleteImgCloudinary(product.imageCover);
+    await Promise.all(product.images.map((img) => deleteImgCloudinary(img)));
+    return product;
   }
 
   //GET HOME PRODUCTS
@@ -111,23 +153,15 @@ class ProductRepository {
     //add secondImage to newProducts
     const addSecondImagePipeline = [
       {
-        $lookup: {
-          from: 'items',
-          let: { productId: '$_id' }, //_id from product
-          pipeline: [
-            { $match: { $expr: { $eq: ['$productId', '$$productId'] } } },
-            { $sort: { _id: 1 } },
-            { $limit: 1 },
-          ],
-          as: 'firstItem',
+        $addFields: {
+          secondImage: { $arrayElemAt: ['$images', 0] },
         },
       },
       {
-        $addFields: {
-          secondImage: { $arrayElemAt: ['$firstItem.imageItem', 0] },
+        $project: {
+          images: 0,
         },
       },
-      { $project: { firstItem: 0 } }, //remove firstItem
     ];
 
     const newProducts = await Product.aggregate([

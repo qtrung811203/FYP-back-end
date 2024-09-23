@@ -18,6 +18,8 @@ const itemSchema = new mongoose.Schema({
   imageItem: {
     type: String,
     required: [true, 'Item image is required'],
+    default:
+      'https://res.cloudinary.com/dje0spcns/image/upload/v1727022373/products/default.jpg',
   },
   price: {
     type: Number,

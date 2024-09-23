@@ -20,8 +20,8 @@ const productStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
     return {
-      folder: 'products',
-      allowedFormats: ['jpg', 'png'],
+      folder: 'testProduct',
+      allowedFormats: ['jpg', 'png', 'jpeg'],
       public_id: `product_${req.user.id}_${Date.now()}`,
       transformation: [{ width: 500, height: 500, crop: 'limit' }],
     };
