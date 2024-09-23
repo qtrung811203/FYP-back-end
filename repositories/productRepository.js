@@ -1,4 +1,6 @@
 const Product = require('../models/productModel');
+const Item = require('../models/itemModel');
+
 const APIFeatures = require('../utils/apiFeatures');
 const { deleteImgCloudinary } = require('../services/cloudinaryConfig');
 const AppError = require('../utils/appError');
@@ -110,12 +112,19 @@ class ProductRepository {
   async updateProduct(slug, data, files) {
     if (files) {
       const product = await Product.findOne({ slug: slug });
-      console.log(product);
+      const item = await Item.find({ productId: product._id });
       if (files.imageCover) {
         await deleteImgCloudinary(product.imageCover);
         data.imageCover = files.imageCover[0].path;
       }
       if (files.images) {
+        if (item.length > 0) {
+          item.map((i) => {
+            i.imageItem =
+              'https://res.cloudinary.com/dje0spcns/image/upload/v1727022373/products/default.jpg';
+            i.save();
+          });
+        }
         Promise.all(product.images.map((img) => deleteImgCloudinary(img)));
         data.images = files.images.map((file) => file.path);
       }
@@ -124,7 +133,7 @@ class ProductRepository {
     const product = await Product.findOneAndUpdate({ slug: slug }, data, {
       new: true,
       runValidators: true,
-    });
+    }).populate('items');
 
     return product;
   }
@@ -132,6 +141,7 @@ class ProductRepository {
   //DELETE PRODUCT
   async deleteProduct(slug) {
     const product = await Product.findOneAndDelete({ slug: slug });
+    await Item.deleteMany({ productId: product._id });
     await deleteImgCloudinary(product.imageCover);
     await Promise.all(product.images.map((img) => deleteImgCloudinary(img)));
     return product;
@@ -143,23 +153,15 @@ class ProductRepository {
     //add secondImage to newProducts
     const addSecondImagePipeline = [
       {
-        $lookup: {
-          from: 'items',
-          let: { productId: '$_id' }, //_id from product
-          pipeline: [
-            { $match: { $expr: { $eq: ['$productId', '$$productId'] } } },
-            { $sort: { _id: 1 } },
-            { $limit: 1 },
-          ],
-          as: 'firstItem',
+        $addFields: {
+          secondImage: { $arrayElemAt: ['$images', 0] },
         },
       },
       {
-        $addFields: {
-          secondImage: { $arrayElemAt: ['$firstItem.imageItem', 0] },
+        $project: {
+          images: 0,
         },
       },
-      { $project: { firstItem: 0 } }, //remove firstItem
     ];
 
     const newProducts = await Product.aggregate([
