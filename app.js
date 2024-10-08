@@ -15,6 +15,7 @@ const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
 const cartRouter = require('./routes/cartRoutes');
 const itemRouter = require('./routes/itemRoutes');
+const checkoutRouter = require('./routes/checkoutRoutes');
 
 const app = express();
 
@@ -33,7 +34,7 @@ app.use(express.urlencoded({ extended: false }));
 
 //Enable CORS
 const corsOptions = {
-  // origin: "https://example.com",
+  origin: '*',
   methods: 'GET, POST, PUT, DELETE',
   allowedHeaders: 'Content-Type, Authorization',
 };
@@ -70,6 +71,7 @@ app.use('/api/v1/items', itemRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
 app.use('/api/v1/cart', cartRouter);
+app.use('/api/v1/checkout', checkoutRouter);
 
 //Route Error handling
 app.all('*', (req, res, next) => {
