@@ -20,7 +20,7 @@ const productStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
     return {
-      folder: 'testProduct',
+      folder: 'products',
       allowedFormats: ['jpg', 'png', 'jpeg'],
       public_id: `product_${req.user.id}_${Date.now()}`,
       transformation: [{ width: 500, height: 500, crop: 'limit' }],
@@ -28,20 +28,6 @@ const productStorage = new CloudinaryStorage({
   },
 });
 
-// Item Upload
-const itemStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: async (req, file) => {
-    return {
-      folder: 'items',
-      allowedFormats: ['jpg', 'png'],
-      public_id: `item_${req.user.id}_${Date.now()}`,
-      transformation: [{ width: 500, height: 500, crop: 'limit' }],
-    };
-  },
-});
-
 const uploadImageUser = multer({ storage: userStorage });
 const uploadImageProduct = multer({ storage: productStorage });
-const uploadImageItem = multer({ storage: itemStorage });
-module.exports = { uploadImageUser, uploadImageProduct, uploadImageItem };
+module.exports = { uploadImageUser, uploadImageProduct };

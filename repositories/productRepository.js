@@ -87,6 +87,17 @@ class ProductRepository {
         },
       },
       {
+        $project: {
+          productInfo: 1,
+          categories: {
+            $sortArray: {
+              input: '$categories',
+              sortBy: { category: -1 },
+            },
+          },
+        },
+      },
+      {
         $replaceRoot: {
           newRoot: {
             productInfo: {
@@ -96,11 +107,12 @@ class ProductRepository {
               ratingsAverage: '$productInfo.ratingsAverage',
               ratingsQuantity: '$productInfo.ratingsQuantity',
               imageCover: '$productInfo.imageCover',
+              images: '$productInfo.images',
               openTime: '$productInfo.openTime',
               type: '$productInfo.type',
               status: '$productInfo.status',
             },
-            items: '$categories', // Đặt các category đã nhóm vào trường items
+            items: '$categories',
           },
         },
       },

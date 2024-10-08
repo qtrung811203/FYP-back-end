@@ -34,9 +34,7 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     results: products.length,
-    data: {
-      data: products,
-    },
+    data: products,
   });
 });
 
@@ -53,9 +51,7 @@ exports.createProduct = catchAsync(async (req, res, next) => {
 
   res.status(201).json({
     status: 'success',
-    data: {
-      data: product,
-    },
+    data: product,
   });
 });
 
@@ -68,9 +64,7 @@ exports.getProduct = catchAsync(async (req, res, next) => {
 
   res.status(200).json({
     status: 'success',
-    data: {
-      data: product,
-    },
+    data: product,
   });
 });
 
@@ -85,9 +79,7 @@ exports.updateProduct = catchAsync(async (req, res, next) => {
   }
   res.status(200).json({
     status: 'success',
-    data: {
-      data: product,
-    },
+    data: product,
   });
 });
 

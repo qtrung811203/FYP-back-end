@@ -39,8 +39,8 @@ const cartSchema = new mongoose.Schema(
     },
   },
   {
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    // toJSON: { virtuals: true },
+    // toObject: { virtuals: true },
     timestamps: true,
   },
 );
@@ -48,6 +48,10 @@ const cartSchema = new mongoose.Schema(
 cartSchema.pre(/^find/, async function (next) {
   this.populate({
     path: 'items.itemId',
+    populate: {
+      path: 'productId',
+      select: 'name',
+    },
   });
   next();
 });
