@@ -48,5 +48,16 @@ itemSchema.pre('save', function (next) {
   next();
 });
 
+itemSchema.pre('findOneAndUpdate', function (next) {
+  const update = this.getUpdate();
+  if (update.stock != null) {
+    if (!update.$set) {
+      update.$set = {};
+    }
+    update.$set.status = update.stock > 0 ? 'inStock' : 'outOfStock';
+  }
+  next();
+});
+
 const Item = mongoose.model('Item', itemSchema);
 module.exports = Item;
