@@ -3,6 +3,10 @@ const checkoutController = require('../controllers/checkoutController');
 
 const router = express.Router();
 
-router.route('/checkout-session').post(checkoutController.getCheckoutSession);
+router
+  .route('/create-checkout-session')
+  .post(checkoutController.createCheckoutSession);
+
+router.route('/session/:sessionId').get(checkoutController.getCheckoutSession);
 
 module.exports = router;
