@@ -2,7 +2,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
-const { meta } = require('eslint-plugin-prettier');
+const Order = require('../models/orderModel');
 
 //Tạo checkout session và trả về session id
 exports.createCheckoutSession = catchAsync(async (req, res, next) => {
@@ -12,8 +12,8 @@ exports.createCheckoutSession = catchAsync(async (req, res, next) => {
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     mode: 'payment',
-    success_url: `${hostUrl}/checkout/success/{CHECKOUT_SESSION_ID}`,
-    cancel_url: `${hostUrl}/checkout/cancel/{CHECKOUT_SESSION_ID}`,
+    success_url: `${hostUrl}/checkout/success?sessionId={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${hostUrl}/checkout/cancel`,
     customer_email: user.email,
     metadata: {
       email: user.email,
@@ -23,19 +23,32 @@ exports.createCheckoutSession = catchAsync(async (req, res, next) => {
       province: user.province,
       district: user.district,
       ward: user.ward,
+      note: user.note,
     },
-    line_items: items.map((item) => ({
-      price_data: {
-        currency: 'vnd',
-        product_data: {
-          name: item.name,
-          images: [item.imageItem],
+    line_items: items.map((item) => {
+      return {
+        price_data: {
+          currency: 'vnd',
+          product_data: {
+            name: item.name,
+            images: [item.imageItem],
+            metadata: {
+              itemId: item._id,
+              productId: item.productId,
+            },
+          },
+          unit_amount: item.price,
         },
-        unit_amount: item.price,
-      },
-      quantity: item.quantity,
-    })),
+        quantity: item.quantity,
+      };
+    }),
   });
+
+  console.log('session', session.id);
+
+  if (!session) {
+    return next(new AppError('Cannot create checkout session', 500));
+  }
 
   res.status(200).json({
     status: 'success',
@@ -43,32 +56,64 @@ exports.createCheckoutSession = catchAsync(async (req, res, next) => {
   });
 });
 
-//Lấy thông tin của checkout session
-exports.getCheckoutSession = catchAsync(async (req, res, next) => {
-  const { sessionId } = req.params;
-  const session = await stripe.checkout.sessions.retrieve(sessionId);
+//Handle checkout success
+exports.handleCheckoutSuccess = catchAsync(async (req, res, next) => {
+  //Get checkout session id
+  const { sessionId } = req.query;
 
-  if (!session) {
-    return next(new AppError('No session found with that ID', 404));
+  const session = await stripe.checkout.sessions.retrieve(sessionId, {
+    expand: ['line_items.data.price.product'],
+  });
+
+  //Check order if exists
+  const orderExists = await Order.findOne({ sessionId: sessionId });
+  if (orderExists) {
+    return res.status(200).json({
+      status: 'success',
+      session,
+      order: orderExists,
+    });
   }
 
+  const orderItems = session.line_items.data.map((lineItem) => {
+    return {
+      itemId: lineItem.price.product.metadata.itemId,
+      quantity: lineItem.quantity,
+    };
+  });
+
+  const { email, ...shippingInformation } = session.metadata;
+
+  // Create order and save to database
+  const order = await Order.create({
+    email: session.customer_email,
+    //write to save items with id and product id from metadata
+    items: orderItems,
+    totalPrice: session.amount_total,
+    shippingInformation: shippingInformation,
+    status: 'paid',
+    paymentMethod: 'stripe',
+    sessionId: session.id,
+  });
+  //Send email
+
+  //Send response
   res.status(200).json({
     status: 'success',
     session,
+    order,
   });
 });
 
-//Unfinished
-exports.checkSession = catchAsync(async (req, res, next) => {
-  const { sessionId } = req.params;
-  const session = await stripe.checkout.sessions.retrieve(sessionId);
+//Handle stripe webhook
+//Do in future
 
-  if (!session) {
-    return next(new AppError('No session found with that ID', 404));
-  }
-
+//Handle cash on delivery
+exports.handleCodCheckout = catchAsync(async (req, res, next) => {
+  //Create order and save to database
+  //Send email
+  //Send response
   res.status(200).json({
     status: 'success',
-    session,
   });
 });
