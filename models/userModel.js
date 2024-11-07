@@ -30,8 +30,18 @@ const userSchema = new mongoose.Schema(
         'https://res.cloudinary.com/dje0spcns/image/upload/v1723778834/users/user_default.png',
     },
     address: {
-      type: String,
-      maxLength: [200, 'Address must not exceed 200 characters'],
+      address: {
+        type: String,
+      },
+      province: {
+        type: String,
+      },
+      district: {
+        type: String,
+      },
+      ward: {
+        type: String,
+      },
     },
     email: {
       type: String,

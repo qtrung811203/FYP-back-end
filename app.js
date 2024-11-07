@@ -9,6 +9,7 @@ const mongoSanatize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
 const productRouter = require('./routes/productRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -28,6 +29,9 @@ const nodeCron = require('./utils/nodeCron');
 //CRON JOB (Every 24 hours)
 nodeCron.start();
 
+//Cookie parser
+app.use(cookieParser());
+
 //MIDDLEWARES
 //Body parser (reading data from body into req.body)
 app.use(express.json());
@@ -35,10 +39,12 @@ app.use(express.urlencoded({ extended: false }));
 
 //Enable CORS
 const corsOptions = {
-  origin: '*',
+  origin: 'http://localhost:5173',
   methods: 'GET, POST, PUT, DELETE',
   allowedHeaders: 'Content-Type, Authorization',
+  credentials: true,
 };
+
 app.use(cors(corsOptions));
 
 //Set security HTTP headers
