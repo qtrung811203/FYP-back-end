@@ -12,6 +12,7 @@ exports.createCodOrder = catchAsync(async (req, res, next) => {
       itemId: item._id,
       quantity: item.quantity,
     })),
+    totalItems: items.reduce((acc, item) => acc + item.quantity, 0),
     paymentMethod: 'cod',
     totalPrice: items.reduce(
       (acc, item) => acc + item.price * item.quantity,
@@ -36,7 +37,11 @@ exports.createCodOrder = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     data: {
-      order,
+      order: {
+        _id: order._id,
+        totalPrice: order.totalPrice,
+        totalItems: order.totalItems,
+      },
     },
   });
 });

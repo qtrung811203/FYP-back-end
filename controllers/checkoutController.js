@@ -90,6 +90,7 @@ exports.handleCheckoutSuccess = catchAsync(async (req, res, next) => {
     //write to save items with id and product id from metadata
     items: orderItems,
     totalPrice: session.amount_total,
+    totalItems: session.display_items.length,
     shippingInformation: shippingInformation,
     status: 'paid',
     paymentMethod: 'stripe',

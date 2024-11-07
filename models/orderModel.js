@@ -21,6 +21,9 @@ const orderSchema = new mongoose.Schema(
         },
       },
     ],
+    totalItems: {
+      type: Number,
+    },
     shippingInformation: {
       fullName: {
         type: String,
