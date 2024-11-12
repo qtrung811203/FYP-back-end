@@ -51,6 +51,11 @@ const productSchema = new mongoose.Schema(
       enum: ['merch', 'digital'],
       default: 'merch',
     },
+    brand: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'Brand',
+      required: [true, 'Product brand is required'],
+    },
     status: {
       type: String,
       enum: ['active', 'inactive', 'rerun'],

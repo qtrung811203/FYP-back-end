@@ -18,6 +18,7 @@ const cartRouter = require('./routes/cartRoutes');
 const itemRouter = require('./routes/itemRoutes');
 const checkoutRouter = require('./routes/checkoutRoutes');
 const orderRouter = require('./routes/orderRoutes');
+const brandRouter = require('./routes/brandRoutes');
 
 const app = express();
 
@@ -80,6 +81,7 @@ app.use('/api/v1/reviews', reviewRouter);
 app.use('/api/v1/cart', cartRouter);
 app.use('/api/v1/checkout', checkoutRouter);
 app.use('/api/v1/orders', orderRouter);
+app.use('/api/v1/brands', brandRouter);
 
 //Route Error handling
 app.all('*', (req, res, next) => {

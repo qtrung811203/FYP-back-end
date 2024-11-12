@@ -17,7 +17,7 @@ class ProductRepository {
   async getAllProducts(queryString) {
     // Build query
     const features = new APIFeatures(
-      Product.find().populate('items'),
+      Product.find().populate('items').populate('brand'),
       queryString,
     )
       .filter()
@@ -26,6 +26,29 @@ class ProductRepository {
       .paginate();
 
     return await features.query;
+  }
+
+  //PRODUCTS BY BRAND
+  async getProductsByBrands(brands) {
+    const mergeBrands = brands.split(',');
+    console.log(mergeBrands);
+    const products = await Product.aggregate([
+      {
+        $lookup: {
+          from: 'brands',
+          localField: 'brand',
+          foreignField: '_id',
+          as: 'brand',
+        },
+      },
+      {
+        $unwind: '$brand',
+      },
+      {
+        $match: { 'brand.name': { $in: mergeBrands } },
+      },
+    ]);
+    return products;
   }
 
   //CREATE PRODUCT
@@ -50,12 +73,17 @@ class ProductRepository {
 
   //GET PRODUCT
   async getProduct(slug) {
-    // const productQuery = Product.findOne({ slug: req.params.slug })
-    //   .populate('reviews')
-    //   .populate('items');
     const product = await Product.aggregate([
       {
         $match: { slug: slug },
+      },
+      {
+        $lookup: {
+          from: 'brands',
+          localField: 'brand',
+          foreignField: '_id',
+          as: 'brand',
+        },
       },
       {
         $lookup: {
@@ -66,29 +94,34 @@ class ProductRepository {
         },
       },
       {
-        //Tách các item ra khỏi mảng items
         $unwind: {
           path: '$items',
-          preserveNullAndEmptyArrays: true, // Giữ sản phẩm ngay cả khi không có items
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $unwind: {
+          path: '$brand',
+          preserveNullAndEmptyArrays: true,
         },
       },
       {
         $group: {
-          _id: '$items.category', // Nhóm các item theo category
-          items: { $push: '$items' }, // Gom các item cùng category vào một mảng
-          quantity: { $sum: 1 }, // Đếm số lượng item
-          productInfo: { $first: '$$ROOT' }, // Giữ thông tin của sản phẩm
-          minPrice: { $min: '$items.price' }, // Tìm giá thấp nhất
+          _id: '$items.category',
+          items: { $push: '$items' },
+          quantity: { $sum: 1 },
+          productInfo: { $first: '$$ROOT' },
+          minPrice: { $min: '$items.price' },
         },
       },
       {
         $group: {
-          _id: '$productInfo._id', // Gom lại tất cả các categories dưới cùng một sản phẩm
+          _id: '$productInfo._id',
           categories: {
             $push: { category: '$_id', quantity: '$quantity', items: '$items' },
-          }, // Tạo một mảng cho các category và items tương ứng
-          productInfo: { $first: '$productInfo' }, // Lấy thông tin của sản phẩm
-          minPrice: { $min: '$minPrice' }, // Tìm giá thấp nhất
+          },
+          productInfo: { $first: '$productInfo' },
+          minPrice: { $min: '$minPrice' },
         },
       },
       {
@@ -128,6 +161,7 @@ class ProductRepository {
               status: '$productInfo.status',
               closeTime: '$productInfo.closeTime',
               minPrice: '$productInfo.minPrice',
+              brand: '$productInfo.brand',
             },
             items: '$categories',
           },

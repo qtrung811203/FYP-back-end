@@ -30,10 +30,22 @@ exports.updateImage = catchAsync(async (req, res, next) => {
 
 //ROUTES HANDLERS
 exports.getAllProducts = catchAsync(async (req, res, next) => {
-  const { page, limit } = req.query;
-  const products = await ProductRepository.getAllProducts(req.query);
+  const { page, limit, brands } = req.query;
   const totalProducts = await Product.countDocuments();
   const totalPages = Math.ceil(totalProducts / limit);
+
+  if (brands) {
+    const products = await ProductRepository.getProductsByBrands(brands);
+    return res.status(200).json({
+      status: 'success',
+      results: products.length,
+      totalPages,
+      currentPage: page,
+      data: products,
+    });
+  }
+
+  const products = await ProductRepository.getAllProducts(req.query);
   res.status(200).json({
     status: 'success',
     results: products.length,
