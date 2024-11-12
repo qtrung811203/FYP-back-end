@@ -3,7 +3,6 @@ const AppError = require('../utils/appError');
 const Order = require('../models/orderModel');
 
 exports.createCodOrder = catchAsync(async (req, res, next) => {
-  console.log('hi');
   const { user, items } = req.body;
 
   const order = await Order.create({
@@ -42,6 +41,19 @@ exports.createCodOrder = catchAsync(async (req, res, next) => {
         totalPrice: order.totalPrice,
         totalItems: order.totalItems,
       },
+    },
+  });
+});
+
+exports.getOrders = catchAsync(async (req, res, next) => {
+  const orders = await Order.find({ email: req.user.email })
+    .populate('items.itemId')
+    .sort('-createdAt');
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      orders,
     },
   });
 });

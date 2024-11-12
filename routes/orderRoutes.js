@@ -6,4 +6,7 @@ const router = express.Router();
 
 router.route('/create-cod-order').post(orderController.createCodOrder);
 
+router.use(authController.protect);
+router.route('/').get(orderController.getOrders);
+
 module.exports = router;

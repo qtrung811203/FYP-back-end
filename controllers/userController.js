@@ -102,13 +102,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     );
   }
   // 2 - update user document
-  const filteredBody = filterObj(
-    req.body,
-    'name',
-    'email',
-    'phoneNumber',
-    'address',
-  );
+  const filteredBody = filterObj(req.body, 'name', 'phoneNumber', 'address');
 
   // 3 - update image
   if (req.file) {

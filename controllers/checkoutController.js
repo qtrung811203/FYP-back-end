@@ -44,11 +44,13 @@ exports.createCheckoutSession = catchAsync(async (req, res, next) => {
     }),
   });
 
-  console.log('session', session.id);
+  console.log('session', session);
 
   if (!session) {
     return next(new AppError('Cannot create checkout session', 500));
   }
+
+  console.log('After create session');
 
   res.status(200).json({
     status: 'success',
@@ -60,6 +62,7 @@ exports.createCheckoutSession = catchAsync(async (req, res, next) => {
 exports.handleCheckoutSuccess = catchAsync(async (req, res, next) => {
   //Get checkout session id
   const { sessionId } = req.query;
+  console.log('sessionId', sessionId);
 
   const session = await stripe.checkout.sessions.retrieve(sessionId, {
     expand: ['line_items.data.price.product'],
@@ -90,7 +93,10 @@ exports.handleCheckoutSuccess = catchAsync(async (req, res, next) => {
     //write to save items with id and product id from metadata
     items: orderItems,
     totalPrice: session.amount_total,
-    totalItems: session.display_items.length,
+    totalItems: session.line_items.data.reduce(
+      (acc, lineItem) => acc + lineItem.quantity,
+      0,
+    ),
     shippingInformation: shippingInformation,
     status: 'paid',
     paymentMethod: 'stripe',
@@ -102,7 +108,7 @@ exports.handleCheckoutSuccess = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     session,
-    order,
+    // order,
   });
 });
 

@@ -16,7 +16,10 @@ class ProductRepository {
   //ALL PRODUCTS
   async getAllProducts(queryString) {
     // Build query
-    const features = new APIFeatures(Product.find(), queryString)
+    const features = new APIFeatures(
+      Product.find().populate('items'),
+      queryString,
+    )
       .filter()
       .sort()
       .limitFields()
@@ -75,6 +78,7 @@ class ProductRepository {
           items: { $push: '$items' }, // Gom các item cùng category vào một mảng
           quantity: { $sum: 1 }, // Đếm số lượng item
           productInfo: { $first: '$$ROOT' }, // Giữ thông tin của sản phẩm
+          minPrice: { $min: '$items.price' }, // Tìm giá thấp nhất
         },
       },
       {
@@ -84,6 +88,15 @@ class ProductRepository {
             $push: { category: '$_id', quantity: '$quantity', items: '$items' },
           }, // Tạo một mảng cho các category và items tương ứng
           productInfo: { $first: '$productInfo' }, // Lấy thông tin của sản phẩm
+          minPrice: { $min: '$minPrice' }, // Tìm giá thấp nhất
+        },
+      },
+      {
+        $addFields: {
+          'productInfo.secondImage': {
+            $arrayElemAt: ['$productInfo.images', 0],
+          },
+          'productInfo.minPrice': '$minPrice',
         },
       },
       {
@@ -101,16 +114,20 @@ class ProductRepository {
         $replaceRoot: {
           newRoot: {
             productInfo: {
+              _id: '$productInfo._id',
               name: '$productInfo.name',
               slug: '$productInfo.slug',
               description: '$productInfo.description',
               ratingsAverage: '$productInfo.ratingsAverage',
               ratingsQuantity: '$productInfo.ratingsQuantity',
               imageCover: '$productInfo.imageCover',
+              secondImage: '$productInfo.secondImage',
               images: '$productInfo.images',
               openTime: '$productInfo.openTime',
               type: '$productInfo.type',
               status: '$productInfo.status',
+              closeTime: '$productInfo.closeTime',
+              minPrice: '$productInfo.minPrice',
             },
             items: '$categories',
           },
@@ -165,8 +182,17 @@ class ProductRepository {
     //add secondImage to newProducts
     const addSecondImagePipeline = [
       {
+        $lookup: {
+          from: 'items',
+          localField: '_id',
+          foreignField: 'productId',
+          as: 'items',
+        },
+      },
+      {
         $addFields: {
           secondImage: { $arrayElemAt: ['$images', 0] },
+          minPrice: { $min: '$items.price' },
         },
       },
       {

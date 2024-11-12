@@ -127,5 +127,19 @@ productSchema.virtual('items', {
   localField: '_id',
 });
 
+productSchema.virtual('minPrice').get(function () {
+  const items = this.items || [];
+  if (items.length > 0) {
+    const prices = items.map((item) => item.price);
+    return Math.min(...prices);
+  } else {
+    return 0;
+  }
+});
+
+productSchema.virtual('secondImage').get(function () {
+  return this.images[0];
+});
+
 Product = mongoose.model('Product', productSchema);
 module.exports = Product;

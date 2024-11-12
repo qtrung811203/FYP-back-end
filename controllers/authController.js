@@ -76,7 +76,6 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
 
   if (req.cookies) {
-    console.log(req.cookies);
     token = req.cookies.jwt;
   }
 
@@ -88,7 +87,6 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   // 2 - verify token
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-
   // 3 - check if user still exists (because user can delete account after token is issued)
   const currentUser = await User.findById(decoded.id);
   if (!currentUser) {
@@ -184,6 +182,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 exports.updateMyPassword = catchAsync(async (req, res, next) => {
   //1 - get user from collection
   const user = await User.findById(req.user.id).select('+password');
+  console.log(user);
   //2 - check if posted current password is correct
   if (!(await user.checkPassword(req.body.passwordCurrent, user.password))) {
     return next(new AppError('Your current password is wrong', 401));
@@ -195,3 +194,8 @@ exports.updateMyPassword = catchAsync(async (req, res, next) => {
   //4 - log user in, send JWT
   signTokenAndSend(user, 200, res);
 });
+
+exports.logout = (req, res) => {
+  res.clearCookie('jwt');
+  res.status(200).json({ status: 'success' });
+};
