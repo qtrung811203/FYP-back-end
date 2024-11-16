@@ -28,10 +28,9 @@ class ProductRepository {
     return await features.query;
   }
 
-  //PRODUCTS BY BRAND
+  //PRODUCTS BY BRAND (DONE)
   async getProductsByBrands(brands) {
     const mergeBrands = brands.split(',');
-    console.log(mergeBrands);
     const products = await Product.aggregate([
       {
         $lookup: {
@@ -51,7 +50,7 @@ class ProductRepository {
     return products;
   }
 
-  //CREATE PRODUCT
+  //CREATE PRODUCT (DONE)
   async createProduct(data, files, next) {
     if (!(files && files.imageCover && files.images)) {
       deleteImgProduct(files);
@@ -73,101 +72,9 @@ class ProductRepository {
 
   //GET PRODUCT
   async getProduct(slug) {
-    const product = await Product.aggregate([
-      {
-        $match: { slug: slug },
-      },
-      {
-        $lookup: {
-          from: 'brands',
-          localField: 'brand',
-          foreignField: '_id',
-          as: 'brand',
-        },
-      },
-      {
-        $lookup: {
-          from: 'items',
-          localField: '_id',
-          foreignField: 'productId',
-          as: 'items',
-        },
-      },
-      {
-        $unwind: {
-          path: '$items',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $unwind: {
-          path: '$brand',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $group: {
-          _id: '$items.category',
-          items: { $push: '$items' },
-          quantity: { $sum: 1 },
-          productInfo: { $first: '$$ROOT' },
-          minPrice: { $min: '$items.price' },
-        },
-      },
-      {
-        $group: {
-          _id: '$productInfo._id',
-          categories: {
-            $push: { category: '$_id', quantity: '$quantity', items: '$items' },
-          },
-          productInfo: { $first: '$productInfo' },
-          minPrice: { $min: '$minPrice' },
-        },
-      },
-      {
-        $addFields: {
-          'productInfo.secondImage': {
-            $arrayElemAt: ['$productInfo.images', 0],
-          },
-          'productInfo.minPrice': '$minPrice',
-        },
-      },
-      {
-        $project: {
-          productInfo: 1,
-          categories: {
-            $sortArray: {
-              input: '$categories',
-              sortBy: { category: -1 },
-            },
-          },
-        },
-      },
-      {
-        $replaceRoot: {
-          newRoot: {
-            productInfo: {
-              _id: '$productInfo._id',
-              name: '$productInfo.name',
-              slug: '$productInfo.slug',
-              description: '$productInfo.description',
-              ratingsAverage: '$productInfo.ratingsAverage',
-              ratingsQuantity: '$productInfo.ratingsQuantity',
-              imageCover: '$productInfo.imageCover',
-              secondImage: '$productInfo.secondImage',
-              images: '$productInfo.images',
-              openTime: '$productInfo.openTime',
-              type: '$productInfo.type',
-              status: '$productInfo.status',
-              closeTime: '$productInfo.closeTime',
-              minPrice: '$productInfo.minPrice',
-              brand: '$productInfo.brand',
-            },
-            items: '$categories',
-          },
-        },
-      },
-    ]);
+    const product = await Product.findOne({ slug: slug })
+      .populate('items')
+      .populate('brand');
     return product;
   }
 
@@ -226,12 +133,29 @@ class ProductRepository {
       {
         $addFields: {
           secondImage: { $arrayElemAt: ['$images', 0] },
-          minPrice: { $min: '$items.price' },
         },
       },
       {
-        $project: {
-          images: 0,
+        $unwind: '$items',
+      },
+      {
+        $sort: { 'items.price': 1 },
+      },
+      {
+        $group: {
+          _id: '$_id',
+          items: { $push: '$items' },
+          name: { $first: '$name' },
+          slug: { $first: '$slug' },
+          description: { $first: '$description' },
+          imageCover: { $first: '$imageCover' },
+          secondImage: { $first: '$secondImage' },
+          images: { $first: '$images' },
+          openTime: { $first: '$openTime' },
+          type: { $first: '$type' },
+          status: { $first: '$status' },
+          closeTime: { $first: '$closeTime' },
+          brand: { $first: '$brand' },
         },
       },
     ];

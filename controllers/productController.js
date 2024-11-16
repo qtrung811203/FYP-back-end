@@ -34,6 +34,7 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
   const totalProducts = await Product.countDocuments();
   const totalPages = Math.ceil(totalProducts / limit);
 
+  //FILTER BY BRANDS
   if (brands) {
     const products = await ProductRepository.getProductsByBrands(brands);
     return res.status(200).json({
@@ -45,6 +46,7 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
     });
   }
 
+  //GET ALL PRODUCTS
   const products = await ProductRepository.getAllProducts(req.query);
   res.status(200).json({
     status: 'success',
