@@ -4,10 +4,11 @@ const authController = require('../controllers/authController');
 
 const router = express.Router();
 
-router
-  .route('/')
-  .get(brandController.getAllBrands)
-  .post(brandController.createBrand);
+router.route('/').get(brandController.getAllBrands);
+
+router.use(authController.protect);
+router.use(authController.inRole('admin'));
+router.route('/').post(brandController.createBrand);
 router
   .route('/:id')
   .get(brandController.getBrand)

@@ -55,6 +55,7 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
   });
 });
 
+// POST /api/v1/products
 exports.createProduct = catchAsync(async (req, res, next) => {
   const product = await ProductRepository.createProduct(
     req.body,

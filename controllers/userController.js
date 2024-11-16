@@ -59,7 +59,8 @@ exports.getUser = catchAsync(async (req, res, next) => {
 
 exports.updateUser = catchAsync(async (req, res, next) => {
   const excludedBody = excludedField(req.body, 'password');
-  const updateUser = await User.findByIdAndUpdate(req.user.id, excludedBody, {
+  const id = req.params.id;
+  const updateUser = await User.findByIdAndUpdate(id, excludedBody, {
     new: true,
     runValidators: true,
   });

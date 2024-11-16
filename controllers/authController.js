@@ -76,6 +76,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
 
   if (req.cookies) {
+    console.log(req.cookies);
     token = req.cookies.jwt;
   }
 
