@@ -18,7 +18,7 @@ router
   .get(productController.getAllProducts)
   .post(
     authController.protect,
-    authController.inRole('manager', 'admin'),
+    authController.inRole('admin'),
     productController.uploadImage,
     productController.createProduct,
   );

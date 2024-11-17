@@ -51,6 +51,11 @@ const productSchema = new mongoose.Schema(
       enum: ['merch', 'digital'],
       default: 'merch',
     },
+    brand: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'Brand',
+      required: [true, 'Product brand is required'],
+    },
     status: {
       type: String,
       enum: ['active', 'inactive', 'rerun'],
@@ -125,6 +130,20 @@ productSchema.virtual('items', {
   ref: 'Item',
   foreignField: 'productId',
   localField: '_id',
+});
+
+productSchema.virtual('minPrice').get(function () {
+  const items = this.items || [];
+  if (items.length > 0) {
+    const prices = items.map((item) => item.price);
+    return Math.min(...prices);
+  } else {
+    return 0;
+  }
+});
+
+productSchema.virtual('secondImage').get(function () {
+  return this.images[0];
 });
 
 Product = mongoose.model('Product', productSchema);

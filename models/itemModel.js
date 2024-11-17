@@ -11,6 +11,11 @@ const itemSchema = new mongoose.Schema({
     required: [true, 'Item name is required'],
     trim: true,
   },
+  description: {
+    type: String,
+    required: [true, 'Item description is required'],
+    trim: true,
+  },
   category: {
     type: String,
     required: [true, 'Item category is required'],

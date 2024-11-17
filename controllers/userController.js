@@ -59,7 +59,8 @@ exports.getUser = catchAsync(async (req, res, next) => {
 
 exports.updateUser = catchAsync(async (req, res, next) => {
   const excludedBody = excludedField(req.body, 'password');
-  const updateUser = await User.findByIdAndUpdate(req.user.id, excludedBody, {
+  const id = req.params.id;
+  const updateUser = await User.findByIdAndUpdate(id, excludedBody, {
     new: true,
     runValidators: true,
   });
@@ -102,13 +103,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     );
   }
   // 2 - update user document
-  const filteredBody = filterObj(
-    req.body,
-    'name',
-    'email',
-    'phoneNumber',
-    'address',
-  );
+  const filteredBody = filterObj(req.body, 'name', 'phoneNumber', 'address');
 
   // 3 - update image
   if (req.file) {

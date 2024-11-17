@@ -16,7 +16,10 @@ class ProductRepository {
   //ALL PRODUCTS
   async getAllProducts(queryString) {
     // Build query
-    const features = new APIFeatures(Product.find(), queryString)
+    const features = new APIFeatures(
+      Product.find().populate('items').populate('brand'),
+      queryString,
+    )
       .filter()
       .sort()
       .limitFields()
@@ -25,7 +28,90 @@ class ProductRepository {
     return await features.query;
   }
 
-  //CREATE PRODUCT
+  async getAllProductsNew(skip, limit, brands, sortByPrice) {
+    console.log('Brands: ' + brands);
+    const hasBrands = brands ? true : false;
+    const sortCondition =
+      sortByPrice === 'asc' ? { minPrice: 1 } : { maxPrice: -1 };
+
+    console.log(sortCondition);
+
+    // Pipeline to get products with minPrice
+    const pipelineProductsWithPrice = [
+      {
+        $lookup: {
+          from: 'items',
+          localField: '_id',
+          foreignField: 'productId',
+          as: 'items',
+        },
+      },
+      {
+        $addFields: {
+          minPrice: { $min: '$items.price' },
+          maxPrice: { $max: '$items.price' },
+        },
+      },
+    ];
+
+    if (hasBrands) {
+      const mergeBrands = brands.split(',');
+      pipelineProductsWithPrice.push({
+        $lookup: {
+          from: 'brands',
+          localField: 'brand',
+          foreignField: '_id',
+          as: 'brand',
+        },
+      });
+      pipelineProductsWithPrice.push({
+        $match: { 'brand.name': { $in: mergeBrands } },
+      });
+    }
+
+    if (skip) {
+      pipelineProductsWithPrice.push({
+        $skip: skip,
+      });
+    } else if (limit) {
+      pipelineProductsWithPrice.push({
+        $limit: +limit,
+      });
+    }
+
+    pipelineProductsWithPrice.push({
+      $sort: sortCondition,
+    });
+
+    const products = await Product.aggregate(pipelineProductsWithPrice);
+    return products;
+  }
+
+  //PRODUCTS BY BRAND (DONE)
+  async getProductsByBrands(brands) {
+    const mergeBrands = brands.split(',');
+    const products = await Product.aggregate([
+      {
+        $lookup: {
+          from: 'brands',
+          localField: 'brand',
+          foreignField: '_id',
+          as: 'brand',
+        },
+      },
+      {
+        $unwind: '$brand',
+      },
+      {
+        $match: { 'brand.name': { $in: mergeBrands } },
+      },
+    ]);
+    return products;
+  }
+
+  //PRODUCTS BY
+
+  //CREATE PRODUCT (DONE)
   async createProduct(data, files, next) {
     if (!(files && files.imageCover && files.images)) {
       deleteImgProduct(files);
@@ -47,76 +133,9 @@ class ProductRepository {
 
   //GET PRODUCT
   async getProduct(slug) {
-    // const productQuery = Product.findOne({ slug: req.params.slug })
-    //   .populate('reviews')
-    //   .populate('items');
-    const product = await Product.aggregate([
-      {
-        $match: { slug: slug },
-      },
-      {
-        $lookup: {
-          from: 'items',
-          localField: '_id',
-          foreignField: 'productId',
-          as: 'items',
-        },
-      },
-      {
-        //Tách các item ra khỏi mảng items
-        $unwind: {
-          path: '$items',
-          preserveNullAndEmptyArrays: true, // Giữ sản phẩm ngay cả khi không có items
-        },
-      },
-      {
-        $group: {
-          _id: '$items.category', // Nhóm các item theo category
-          items: { $push: '$items' }, // Gom các item cùng category vào một mảng
-          quantity: { $sum: 1 }, // Đếm số lượng item
-          productInfo: { $first: '$$ROOT' }, // Giữ thông tin của sản phẩm
-        },
-      },
-      {
-        $group: {
-          _id: '$productInfo._id', // Gom lại tất cả các categories dưới cùng một sản phẩm
-          categories: {
-            $push: { category: '$_id', quantity: '$quantity', items: '$items' },
-          }, // Tạo một mảng cho các category và items tương ứng
-          productInfo: { $first: '$productInfo' }, // Lấy thông tin của sản phẩm
-        },
-      },
-      {
-        $project: {
-          productInfo: 1,
-          categories: {
-            $sortArray: {
-              input: '$categories',
-              sortBy: { category: -1 },
-            },
-          },
-        },
-      },
-      {
-        $replaceRoot: {
-          newRoot: {
-            productInfo: {
-              name: '$productInfo.name',
-              slug: '$productInfo.slug',
-              description: '$productInfo.description',
-              ratingsAverage: '$productInfo.ratingsAverage',
-              ratingsQuantity: '$productInfo.ratingsQuantity',
-              imageCover: '$productInfo.imageCover',
-              images: '$productInfo.images',
-              openTime: '$productInfo.openTime',
-              type: '$productInfo.type',
-              status: '$productInfo.status',
-            },
-            items: '$categories',
-          },
-        },
-      },
-    ]);
+    const product = await Product.findOne({ slug: slug })
+      .populate('items')
+      .populate('brand');
     return product;
   }
 
@@ -165,13 +184,39 @@ class ProductRepository {
     //add secondImage to newProducts
     const addSecondImagePipeline = [
       {
+        $lookup: {
+          from: 'items',
+          localField: '_id',
+          foreignField: 'productId',
+          as: 'items',
+        },
+      },
+      {
         $addFields: {
           secondImage: { $arrayElemAt: ['$images', 0] },
         },
       },
       {
-        $project: {
-          images: 0,
+        $unwind: '$items',
+      },
+      {
+        $sort: { 'items.price': 1 },
+      },
+      {
+        $group: {
+          _id: '$_id',
+          items: { $push: '$items' },
+          name: { $first: '$name' },
+          slug: { $first: '$slug' },
+          description: { $first: '$description' },
+          imageCover: { $first: '$imageCover' },
+          secondImage: { $first: '$secondImage' },
+          images: { $first: '$images' },
+          openTime: { $first: '$openTime' },
+          type: { $first: '$type' },
+          status: { $first: '$status' },
+          closeTime: { $first: '$closeTime' },
+          brand: { $first: '$brand' },
         },
       },
     ];
