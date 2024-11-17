@@ -28,6 +28,65 @@ class ProductRepository {
     return await features.query;
   }
 
+  async getAllProductsNew(skip, limit, brands, sortByPrice) {
+    console.log('Brands: ' + brands);
+    const hasBrands = brands ? true : false;
+    const sortCondition =
+      sortByPrice === 'asc' ? { minPrice: 1 } : { maxPrice: -1 };
+
+    console.log(sortCondition);
+
+    // Pipeline to get products with minPrice
+    const pipelineProductsWithPrice = [
+      {
+        $lookup: {
+          from: 'items',
+          localField: '_id',
+          foreignField: 'productId',
+          as: 'items',
+        },
+      },
+      {
+        $addFields: {
+          minPrice: { $min: '$items.price' },
+          maxPrice: { $max: '$items.price' },
+        },
+      },
+    ];
+
+    if (hasBrands) {
+      const mergeBrands = brands.split(',');
+      pipelineProductsWithPrice.push({
+        $lookup: {
+          from: 'brands',
+          localField: 'brand',
+          foreignField: '_id',
+          as: 'brand',
+        },
+      });
+      pipelineProductsWithPrice.push({
+        $match: { 'brand.name': { $in: mergeBrands } },
+      });
+    }
+
+    if (skip) {
+      pipelineProductsWithPrice.push({
+        $skip: skip,
+      });
+    } else if (limit) {
+      pipelineProductsWithPrice.push({
+        $limit: +limit,
+      });
+    }
+
+    pipelineProductsWithPrice.push({
+      $sort: sortCondition,
+    });
+
+    const products = await Product.aggregate(pipelineProductsWithPrice);
+    return products;
+  }
+
   //PRODUCTS BY BRAND (DONE)
   async getProductsByBrands(brands) {
     const mergeBrands = brands.split(',');
@@ -49,6 +108,8 @@ class ProductRepository {
     ]);
     return products;
   }
+
+  //PRODUCTS BY
 
   //CREATE PRODUCT (DONE)
   async createProduct(data, files, next) {

@@ -5,7 +5,7 @@ const AppError = require('../utils/appError');
 
 const { uploadImageProduct } = require('../services/multerConfig');
 
-// MIDDLEWARE
+// MIDDLEWARE TO UPLOAD IMAGE
 exports.uploadImage = uploadImageProduct.fields([
   { name: 'imageCover', maxCount: 1 },
   { name: 'images' },
@@ -30,24 +30,19 @@ exports.updateImage = catchAsync(async (req, res, next) => {
 
 //ROUTES HANDLERS
 exports.getAllProducts = catchAsync(async (req, res, next) => {
-  const { page, limit, brands } = req.query;
+  const { page, limit, brands = '', sortByPrice } = req.query;
   const totalProducts = await Product.countDocuments();
   const totalPages = Math.ceil(totalProducts / limit);
 
-  //FILTER BY BRANDS
-  if (brands) {
-    const products = await ProductRepository.getProductsByBrands(brands);
-    return res.status(200).json({
-      status: 'success',
-      results: products.length,
-      totalPages,
-      currentPage: page,
-      data: products,
-    });
-  }
+  const skip = (page - 1) * limit;
 
-  //GET ALL PRODUCTS
-  const products = await ProductRepository.getAllProducts(req.query);
+  const products = await ProductRepository.getAllProductsNew(
+    skip,
+    limit,
+    brands,
+    sortByPrice,
+  );
+
   res.status(200).json({
     status: 'success',
     results: products.length,
@@ -55,6 +50,28 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
     currentPage: page,
     data: products,
   });
+
+  //FILTER BY BRANDS
+  // if (brands) {
+  //   const products = await ProductRepository.getProductsByBrands(brands);
+  //   return res.status(200).json({
+  //     status: 'success',
+  //     results: products.length,
+  //     totalPages,
+  //     currentPage: page,
+  //     data: products,
+  //   });
+  // }
+
+  //GET ALL PRODUCTS
+  // const products = await ProductRepository.getAllProducts(req.query);
+  // res.status(200).json({
+  //   status: 'success',
+  //   results: products.length,
+  //   totalPages,
+  //   currentPage: page,
+  //   data: products,
+  // });
 });
 
 // POST /api/v1/products
