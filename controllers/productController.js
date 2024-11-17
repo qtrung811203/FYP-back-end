@@ -30,7 +30,7 @@ exports.updateImage = catchAsync(async (req, res, next) => {
 
 //ROUTES HANDLERS
 exports.getAllProducts = catchAsync(async (req, res, next) => {
-  const { page, limit, brands = '', sortByPrice } = req.query;
+  const { page, limit, brands = '', searchQuery = '', sortByPrice } = req.query;
   const totalProducts = await Product.countDocuments();
   const totalPages = Math.ceil(totalProducts / limit);
 
@@ -41,6 +41,7 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
     limit,
     brands,
     sortByPrice,
+    searchQuery,
   );
 
   res.status(200).json({

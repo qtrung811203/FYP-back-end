@@ -28,13 +28,13 @@ class ProductRepository {
     return await features.query;
   }
 
-  async getAllProductsNew(skip, limit, brands, sortByPrice) {
+  async getAllProductsNew(skip, limit, brands, sortByPrice, searchQuery) {
     console.log('Brands: ' + brands);
     const hasBrands = brands ? true : false;
     const sortCondition =
       sortByPrice === 'asc' ? { minPrice: 1 } : { maxPrice: -1 };
 
-    console.log(sortCondition);
+    console.log(searchQuery);
 
     // Pipeline to get products with minPrice
     const pipelineProductsWithPrice = [
@@ -66,6 +66,17 @@ class ProductRepository {
       });
       pipelineProductsWithPrice.push({
         $match: { 'brand.name': { $in: mergeBrands } },
+      });
+    }
+
+    if (searchQuery) {
+      pipelineProductsWithPrice.push({
+        $match: {
+          $or: [
+            { name: { $regex: searchQuery, $options: 'i' } }, // Search by name
+            { description: { $regex: searchQuery, $options: 'i' } }, // Search by description
+          ],
+        },
       });
     }
 
@@ -108,8 +119,6 @@ class ProductRepository {
     ]);
     return products;
   }
-
-  //PRODUCTS BY
 
   //CREATE PRODUCT (DONE)
   async createProduct(data, files, next) {
