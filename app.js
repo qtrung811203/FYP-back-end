@@ -40,7 +40,7 @@ app.use(express.urlencoded({ extended: false }));
 
 //Enable CORS
 const corsOptions = {
-  origin: 'http://localhost:5173',
+  origin: process.env.FRONT_END_URL,
   methods: 'GET, POST, PUT, DELETE, PATCH',
   credentials: true,
 };
