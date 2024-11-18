@@ -1,5 +1,9 @@
+const moment = require('moment');
+
 const Product = require('../models/productModel');
 const Item = require('../models/itemModel');
+const Orders = require('../models/orderModel');
+const User = require('../models/userModel');
 
 const APIFeatures = require('../utils/apiFeatures');
 const { deleteImgCloudinary } = require('../services/cloudinaryConfig');
@@ -252,6 +256,86 @@ class ProductRepository {
     ]);
 
     return { newProducts, newMerch, almostEnd };
+  }
+
+  //Get dashboard products
+  //api/v1/products/dashboard
+  async getDashboardProducts() {
+    const totalOrders = await Orders.countDocuments();
+    const totalProducts = await Product.countDocuments();
+    const totalUsers = await User.countDocuments();
+    const totalSales = await Orders.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: '$totalPrice' },
+        },
+      },
+    ]);
+
+    return { totalOrders, totalSales, totalProducts, totalUsers };
+  }
+
+  //api/v1/products/last-7-days-sales
+  async getLast7DaysSales() {
+    const endDate = moment();
+    const startDate = moment().subtract(7, 'days');
+
+    const dateRange = [];
+    for (let i = 6; i >= 0; i--) {
+      dateRange.push(moment().subtract(i, 'days').format('YYYY-MM-DD'));
+    }
+
+    const totalSales = await Orders.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate.toDate(), $lt: endDate.toDate() },
+        },
+      },
+      {
+        $project: {
+          date: {
+            $dateToString: {
+              format: '%Y-%m-%d',
+              date: '$createdAt',
+              timezone: 'Asia/Ho_Chi_Minh',
+            },
+          },
+          totalPrice: 1,
+        },
+      },
+      {
+        $group: {
+          _id: '$date',
+          totalRevenue: { $sum: '$totalPrice' },
+        },
+      },
+      {
+        $sort: { _id: 1 },
+      },
+      {
+        $limit: 7,
+      },
+      {
+        $project: {
+          _id: 0,
+          date: '$_id',
+          price: '$totalRevenue',
+        },
+      },
+    ]);
+
+    const result = totalSales.reduce((acc, item) => {
+      acc[item.date] = item.price;
+      return acc;
+    }, {});
+
+    const finalResult = dateRange.map((date) => ({
+      date,
+      price: result[date] || 0,
+    }));
+
+    return finalResult;
   }
 }
 module.exports = new ProductRepository();

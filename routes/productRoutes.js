@@ -11,6 +11,18 @@ router.use('/:slug/items', itemRouter);
 
 //api/v1/products/home-products
 router.get('/home', productController.getHomeProducts);
+router.get(
+  '/dashboard',
+  authController.protect,
+  authController.inRole('admin'),
+  productController.getDashboardProducts,
+);
+router.get(
+  '/last-7-days-sales',
+  authController.protect,
+  authController.inRole('admin'),
+  productController.getLast7DaysSales,
+);
 
 //api/v1/products
 router
