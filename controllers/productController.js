@@ -30,7 +30,7 @@ exports.updateImage = catchAsync(async (req, res, next) => {
 
 //ROUTES HANDLERS
 exports.getAllProducts = catchAsync(async (req, res, next) => {
-  const { page, limit, brands = '', sortByPrice } = req.query;
+  const { page, limit, brands = '', searchQuery = '', sortByPrice } = req.query;
   const totalProducts = await Product.countDocuments();
   const totalPages = Math.ceil(totalProducts / limit);
 
@@ -41,6 +41,7 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
     limit,
     brands,
     sortByPrice,
+    searchQuery,
   );
 
   res.status(200).json({
@@ -133,6 +134,7 @@ exports.deleteProduct = catchAsync(async (req, res, next) => {
 });
 
 //CUSTOM ROUTES
+//GET /api/v1/products/home
 exports.getHomeProducts = catchAsync(async (req, res, next) => {
   const { newProducts, newMerch, almostEnd } =
     await ProductRepository.getHomeProducts();
@@ -144,5 +146,31 @@ exports.getHomeProducts = catchAsync(async (req, res, next) => {
       newMerch,
       almostEnd,
     },
+  });
+});
+
+//GET /api/v1/products/dashboard
+exports.getDashboardProducts = catchAsync(async (req, res, next) => {
+  const { totalOrders, totalSales, totalProducts, totalUsers } =
+    await ProductRepository.getDashboardProducts();
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      totalOrders,
+      totalSales,
+      totalProducts,
+      totalUsers,
+    },
+  });
+});
+
+//GET /api/v1/products/last-7-days-sales
+exports.getLast7DaysSales = catchAsync(async (req, res, next) => {
+  const last7DaysSales = await ProductRepository.getLast7DaysSales();
+
+  res.status(200).json({
+    status: 'success',
+    data: last7DaysSales,
   });
 });
