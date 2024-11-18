@@ -3,6 +3,8 @@ const checkoutController = require('../controllers/checkoutController');
 
 const router = express.Router();
 
+// api/v1/checkout
+
 //Create a checkout session
 router
   .route('/create-checkout-session')
@@ -18,6 +20,7 @@ router
 
 //Handle Stripe and Cod payment
 router.route('/success').get(checkoutController.handleCheckoutSuccess);
-router.route('/cod').post(checkoutController.handleCodCheckout);
+router.route('/cod-create').post(checkoutController.handleCodCheckout);
+router.route('/cod-confirm/:token').post(checkoutController.handleCodConfirm);
 
 module.exports = router;
