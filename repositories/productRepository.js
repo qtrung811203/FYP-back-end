@@ -266,6 +266,9 @@ class ProductRepository {
     const totalUsers = await User.countDocuments();
     const totalSales = await Orders.aggregate([
       {
+        $match: { status: 'paid' || 'confirmed' },
+      },
+      {
         $group: {
           _id: null,
           total: { $sum: '$totalPrice' },
@@ -290,6 +293,7 @@ class ProductRepository {
       {
         $match: {
           createdAt: { $gte: startDate.toDate(), $lt: endDate.toDate() },
+          status: { $in: ['paid', 'confirmed'] },
         },
       },
       {

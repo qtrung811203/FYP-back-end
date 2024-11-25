@@ -4,6 +4,9 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const Order = require('../models/orderModel');
 
+const sendEmail = require('../utils/email');
+const crypto = require('crypto');
+
 //Tạo checkout session và trả về session id
 exports.createCheckoutSession = catchAsync(async (req, res, next) => {
   const { user, items } = req.body;
@@ -44,8 +47,6 @@ exports.createCheckoutSession = catchAsync(async (req, res, next) => {
     }),
   });
 
-  console.log('session', session);
-
   if (!session) {
     return next(new AppError('Cannot create checkout session', 500));
   }
@@ -62,7 +63,6 @@ exports.createCheckoutSession = catchAsync(async (req, res, next) => {
 exports.handleCheckoutSuccess = catchAsync(async (req, res, next) => {
   //Get checkout session id
   const { sessionId } = req.query;
-  console.log('sessionId', sessionId);
 
   const session = await stripe.checkout.sessions.retrieve(sessionId, {
     expand: ['line_items.data.price.product'],
@@ -115,12 +115,90 @@ exports.handleCheckoutSuccess = catchAsync(async (req, res, next) => {
 //Handle stripe webhook
 //Do in future
 
-//Handle cash on delivery
+//Handle cash on delivery (receive order and send email for user confirmation)
 exports.handleCodCheckout = catchAsync(async (req, res, next) => {
+  const token = crypto.randomBytes(32).toString('hex');
+  const confirmUrl = `${req.headers.origin}/checkout/cod-success/${token}`;
+
   //Create order and save to database
+  const { user, items } = req.body;
+
+  const order = await Order.create({
+    email: user.email,
+    items: items.map((item) => ({
+      itemId: item._id,
+      quantity: item.quantity,
+    })),
+    totalItems: items.reduce((acc, item) => acc + item.quantity, 0),
+    paymentMethod: 'cod',
+    totalPrice: items.reduce(
+      (acc, item) => acc + item.price * item.quantity,
+      0,
+    ),
+    status: 'pending',
+    shippingInformation: {
+      fullName: user.fullName,
+      phoneNumber: user.phoneNumber,
+      address: user.address,
+      province: user.province,
+      district: user.district,
+      ward: user.ward,
+      note: user.note,
+    },
+    confirmationToken: token,
+  });
+
+  if (!order) {
+    return next(new AppError('Cannot create order', 500));
+  }
   //Send email
+  const message = `Please confirm your order by clicking the link: ${confirmUrl}`;
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Confirm your order',
+      message,
+    });
+  } catch (err) {
+    return next(new AppError('Cannot send email', 500));
+  }
+
   //Send response
   res.status(200).json({
     status: 'success',
+    data: {
+      order: {
+        order,
+      },
+    },
+  });
+});
+
+//Handle cod confirm
+exports.handleCodConfirm = catchAsync(async (req, res, next) => {
+  //Update order status
+  const { token } = req.params;
+  console.log(token);
+  const order = await Order.findOneAndUpdate(
+    { confirmationToken: token },
+    { status: 'confirmed', confirmationToken: undefined },
+    { new: true },
+  );
+  if (!order) {
+    return next(new AppError('Invalid token', 400));
+  }
+
+  const totalItems = order.items.reduce((acc, item) => acc + item.quantity, 0);
+
+  //Send response
+  res.status(200).json({
+    status: 'success',
+    data: {
+      order: {
+        _id: order._id,
+        totalPrice: order.totalPrice,
+        totalItems,
+      },
+    },
   });
 });

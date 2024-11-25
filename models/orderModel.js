@@ -52,7 +52,7 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'paid', 'failed', 'canceled'],
+      enum: ['pending', 'paid', 'failed', 'canceled', 'confirmed'],
       default: 'pending',
     },
     paymentMethod: {
@@ -64,6 +64,9 @@ const orderSchema = new mongoose.Schema(
       type: Number,
     },
     sessionId: {
+      type: String,
+    },
+    confirmationToken: {
       type: String,
     },
     createdAt: {
