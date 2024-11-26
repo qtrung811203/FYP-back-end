@@ -122,14 +122,16 @@ exports.inRole = (...roles) => {
 };
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
+  const hostUrl = req.headers.origin;
+
   //1 - get user based on posted email
   const user = await User.findOne({ email: req.body.email });
   //2 - generate random reset token
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
   //3 - send it to user's email
-  const resetURL = `${req.protocol}://${req.get('host')}/api/v1/users/resetPassword/${resetToken}`;
-  const message = `Forgot your password? Submit a PATCH request with your new password and passwordConfirm to: ${resetURL}\nIf you didn't forget your password, please ignore this email!`;
+  const resetURL = `${hostUrl}/reset-password/${resetToken}`;
+  const message = `Forgot your password? Visit this link to reset your password: ${resetURL}\nIf you didn't forget your password, please ignore this email!`;
 
   try {
     await sendEmail({

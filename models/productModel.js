@@ -40,7 +40,6 @@ const productSchema = new mongoose.Schema(
     images: [String],
     openTime: {
       type: Date,
-      required: [true, 'Product open time is required'],
       default: Date.now(),
     },
     closeTime: {
