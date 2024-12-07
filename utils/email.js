@@ -15,8 +15,7 @@ const sendEmail = async (options) => {
     from: 'quoctrung-application <hello@quoctrung.io>',
     to: options.email,
     subject: options.subject,
-    text: options.message,
-    // html:
+    html: options.html || `<p>${options.message}</p>`,
   };
   // 3 - actually send the email
   await transporter.sendMail(mailOptions);

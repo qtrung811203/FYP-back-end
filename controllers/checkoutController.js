@@ -7,6 +7,9 @@ const Order = require('../models/orderModel');
 const sendEmail = require('../utils/email');
 const crypto = require('crypto');
 
+const createInvoiceTemplate = require('../templates/invoiceTemplate');
+const createCodCheckoutTemplate = require('../templates/confirmCodCheckoutTemplate');
+
 //Tạo checkout session và trả về session id
 exports.createCheckoutSession = catchAsync(async (req, res, next) => {
   const { user, items } = req.body;
@@ -50,8 +53,6 @@ exports.createCheckoutSession = catchAsync(async (req, res, next) => {
   if (!session) {
     return next(new AppError('Cannot create checkout session', 500));
   }
-
-  console.log('After create session');
 
   res.status(200).json({
     status: 'success',
@@ -101,14 +102,27 @@ exports.handleCheckoutSuccess = catchAsync(async (req, res, next) => {
     status: 'paid',
     paymentMethod: 'stripe',
     sessionId: session.id,
+  }).then((order) => {
+    return order.populate('items.itemId');
   });
+
   //Send email
+  const invoiceTemplate = createInvoiceTemplate(order);
+  try {
+    await sendEmail({
+      email: order.email,
+      subject: 'Your order',
+      html: invoiceTemplate,
+    });
+  } catch (err) {
+    return next(new AppError('Cannot send email', 500));
+  }
 
   //Send response
   res.status(200).json({
     status: 'success',
     session,
-    // order,
+    order,
   });
 });
 
@@ -152,12 +166,13 @@ exports.handleCodCheckout = catchAsync(async (req, res, next) => {
     return next(new AppError('Cannot create order', 500));
   }
   //Send email
-  const message = `Please confirm your order by clicking the link: ${confirmUrl}`;
+  const codTemplate = createCodCheckoutTemplate(confirmUrl);
+  // const message = `Please confirm your order by clicking the link: ${confirmUrl}`;
   try {
     await sendEmail({
       email: user.email,
       subject: 'Confirm your order',
-      message,
+      html: codTemplate,
     });
   } catch (err) {
     return next(new AppError('Cannot send email', 500));
@@ -178,14 +193,29 @@ exports.handleCodCheckout = catchAsync(async (req, res, next) => {
 exports.handleCodConfirm = catchAsync(async (req, res, next) => {
   //Update order status
   const { token } = req.params;
-  console.log(token);
   const order = await Order.findOneAndUpdate(
-    { confirmationToken: token },
+    { confirmationToken: token, status: 'pending' },
     { status: 'confirmed', confirmationToken: undefined },
     { new: true },
-  );
+  ).populate('items.itemId');
+
   if (!order) {
     return next(new AppError('Invalid token', 400));
+  }
+
+  console.log(order);
+
+  //Send email
+  const invoiceTemplate = createInvoiceTemplate(order);
+
+  try {
+    await sendEmail({
+      email: order.email,
+      subject: 'Your order',
+      html: invoiceTemplate,
+    });
+  } catch (err) {
+    return next(new AppError('Cannot send email', 500));
   }
 
   const totalItems = order.items.reduce((acc, item) => acc + item.quantity, 0);
